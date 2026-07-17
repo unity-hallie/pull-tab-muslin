@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Narrator View — muslin (RECESS)</title>
+<style>
+  :root { --paper:#faf6ec; --ink:#242019; --rule:#cabf9f; --lure:#8a7350; --seam:#b5462f; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  }
+  .banner {
+    font-family: -apple-system, "Segoe UI", monospace;
+    font-size: .8rem; color: #6b4a1a; background: repeating-linear-gradient(45deg,#f5e6c3,#f5e6c3 12px,#faf1dd 12px,#faf1dd 24px);
+    border-bottom: 3px dashed #c9a227;
+    padding: .7rem 1.2rem;
+  }
+  .banner b { color: #a13; }
+  .banner .law {
+    display: block; margin-top: .35rem; font-weight: bold; color: #7a1c0e;
+  }
+  header.page {
+    max-width: 46rem; margin: 0 auto; padding: 2.4rem 1.5rem 0;
+  }
+  h1.masthead {
+    font-size: 1.1rem; letter-spacing: .18em; text-transform: uppercase;
+    text-align: center; color: var(--lure); margin: 0 0 .2rem;
+    border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+    padding: .5rem 0;
+  }
+  .dateline {
+    text-align: center; font-style: italic; color: #6b6252; margin: .6rem 0 1.6rem;
+    font-size: .95rem;
+  }
+  .controls {
+    max-width: 46rem; margin: 0 auto 1.2rem; padding: 0 1.5rem;
+    display: flex; flex-wrap: wrap; gap: .6rem 1.4rem; align-items: center;
+    font-family: -apple-system, "Segoe UI", sans-serif; font-size: .82rem;
+  }
+  .controls fieldset {
+    border: 1px dashed var(--rule); border-radius: 4px; padding: .35rem .7rem;
+    display: flex; gap: .5rem; align-items: center; margin: 0;
+  }
+  .controls legend { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--lure); padding: 0 .3rem; }
+  .controls label { display: flex; align-items: center; gap: .3rem; cursor: pointer; }
+  .controls select { font: inherit; }
+  .toggle-btn {
+    font-family: inherit; font-size: .8rem; border: 1px solid var(--rule); background: #fff;
+    padding: .35rem .7rem; border-radius: 4px; cursor: pointer;
+  }
+  .toggle-btn.active { background: #efe6cf; border-color: #a1863f; }
+
+  article {
+    max-width: 44rem; margin: 0 auto; padding: 0 1.5rem 4rem;
+    font-size: 1.14rem; line-height: 1.75;
+  }
+  article p { margin: 0 0 1.3rem; }
+  article p:first-of-type::first-letter {
+    float: left; font-size: 3.6rem; line-height: .8; padding: .1rem .12rem 0 0;
+    font-family: Georgia, serif; color: #6b4a1a;
+  }
+
+  /* Tense-colored sentence spans, subtle underline only, no chrome by default */
+  .s-perfect     { border-bottom: 2px solid #6b8f57; }
+  .s-imperfective{ border-bottom: 2px dashed #4a6fa1; }
+  .s-futureperfect{ border-bottom: 2px dotted #a1663f; }
+  .s-lure        { border-bottom: 2px double #8a4fa1; }
+  .s-mediated    { border-bottom: 2px solid #b5462f; }
+
+  .reads-on .s-perfect, .reads-on .s-imperfective, .reads-on .s-futureperfect,
+  .reads-on .s-lure, .reads-on .s-mediated {
+    cursor: help;
+  }
+  .seam-tip {
+    display: none;
+    font-family: -apple-system, "Segoe UI", monospace; font-size: .72rem;
+    background: #fffbe9; border: 1px solid #d8c98a; border-radius: 3px;
+    padding: .25rem .5rem; margin: -.2rem 0 1rem; color: #5a4a1a;
+  }
+  .reads-on .seam-tip { display: block; }
+
+  .legend-strip {
+    max-width: 44rem; margin: 0 auto 2rem; padding: 0 1.5rem;
+    font-family: -apple-system, "Segoe UI", sans-serif; font-size: .74rem; color: #6b6252;
+    display: flex; flex-wrap: wrap; gap: 1rem 1.4rem;
+  }
+  .legend-strip span { display: inline-flex; align-items: center; gap: .35rem; }
+  .swatch { display: inline-block; width: 1.1rem; height: 0; border-bottom-width: 2px; }
+  .sw-perfect { border-bottom: 2px solid #6b8f57; }
+  .sw-imperfective { border-bottom: 2px dashed #4a6fa1; }
+  .sw-futureperfect { border-bottom: 2px dotted #a1663f; }
+  .sw-lure { border-bottom: 2px double #8a4fa1; }
+  .sw-mediated { border-bottom: 2px solid #b5462f; }
+
+  .rules-table-wrap {
+    max-width: 46rem; margin: 0 auto 3rem; padding: 0 1.5rem;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+  }
+  .rules-table-wrap h2 {
+    font-family: Georgia, serif; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--lure); border-bottom: 1px solid var(--rule); padding-bottom: .3rem;
+  }
+  table.tense-rules { border-collapse: collapse; width: 100%; font-size: .82rem; }
+  table.tense-rules th, table.tense-rules td {
+    border: 1px solid var(--rule); padding: .4rem .6rem; text-align: left; vertical-align: top;
+  }
+  table.tense-rules th { background: #f0e9d6; }
+  table.tense-rules code { font-size: .78rem; background: #f5f0e2; padding: .05rem .3rem; border-radius: 2px; }
+
+  .findings {
+    max-width: 46rem; margin: 0 auto 3rem; padding: 0 1.5rem;
+    font-family: -apple-system, "Segoe UI", sans-serif; font-size: .9rem; color: #3a3527;
+  }
+  .findings h2 {
+    font-family: Georgia, serif; font-size: 1rem; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--lure); border-bottom: 1px solid var(--rule); padding-bottom: .3rem;
+  }
+  .findings .break {
+    background: #fdf1ec; border-left: 3px solid var(--seam); padding: .6rem .9rem; margin: .8rem 0;
+  }
+  .tear {
+    max-width: 46rem; margin: 0 auto 4rem; padding: 1rem 1.5rem;
+    text-align: center; font-weight: bold; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--seam); border: 3px dashed var(--seam); font-family: -apple-system, sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  ⚠ MUSLIN — RECESS PLAY, not a product. Cheap cotton: fake-but-graph-shaped data,
+  client-side JS, no server. The generator does NOT invent facts — every sentence
+  below is a RENDER of a read over the fake graph, never a hallucination.
+  <b>Try to break it.</b> Toggle <code>[show the reads]</code> to see the seam
+  behind every sentence; flip <code>[narrated for: …]</code> and watch tense
+  reassign itself to the SAME facts from a different vantage.
+  <span class="law">LAW: no invented facts. The prose is a render, never a hallucination.
+  If a sentence can't point back to reads over the fixture, it is a bug, not style.</span>
+</div>
+
+<header class="page">
+  <h1 class="masthead">The Day, Narrated</h1>
+  <div class="dateline" id="dateline">Wednesday, 16 July 2026 — as read from the graph</div>
+</header>
+
+<div class="controls">
+  <fieldset>
+    <legend>narrated for</legend>
+    <label><input type="radio" name="vantage" value="hallie" checked> hallie</label>
+    <label><input type="radio" name="vantage" value="jon"> jon</label>
+    <label><input type="radio" name="vantage" value="sprint"> the-sprint</label>
+  </fieldset>
+  <button class="toggle-btn" id="readsToggle" type="button">[show the reads]</button>
+</div>
+
+<div class="legend-strip">
+  <span><i class="swatch sw-perfect"></i> perfect — closed, behind Now</span>
+  <span><i class="swatch sw-imperfective"></i> imperfective — straddling Now</span>
+  <span><i class="swatch sw-futureperfect"></i> future-perfect — scripted, grounds already laid</span>
+  <span><i class="swatch sw-lure"></i> the lure — reaching, receding</span>
+  <span><i class="swatch sw-mediated"></i> mediated — known only through another's telling</span>
+</div>
+
+<article id="prose"><!-- rendered by narrator.js below --></article>
+
+<div class="rules-table-wrap">
+  <h2>Tense-selection rules (topology → grammar)</h2>
+  <table class="tense-rules">
+    <thead><tr><th>Topology (the read)</th><th>Tense chosen</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>endActual(end) === true</code> and <code>reaches(Now, end, "q-grounding")</code></td>
+        <td>PERFECT</td>
+        <td>Closed AND behind the day's Now — a bounded whole, seen from outside. "The quiz
+        import was mended by midmorning."</td>
+      </tr>
+      <tr>
+        <td><code>endActual(end) === false</code> and <code>reaches(event, Now-anchor, "q-grounding")</code>
+        (the event's own span contains the strike, no closing edge yet)</td>
+        <td>IMPERFECTIVE</td>
+        <td>Reference point sits INSIDE the event — begun, unfinished, astride the hour.
+        Two straddlers can both be true without ordering each other (Mrs Dalloway's
+        Clarissa/Septimus pair).</td>
+      </tr>
+      <tr>
+        <td><code>endActual(end) === false</code> but <code>reaches(event, groundAlreadyLaid, "q-grounding")</code>
+        for a scripted/future End whose prior grounds are already actual</td>
+        <td>FUTURE PERFECT</td>
+        <td>E before R, R after S (Reichenbach) — the grounds are already in the past cone of
+        a not-yet-actual End. "By Friday the release will have gone to Jon; the container is
+        already proven."</td>
+      </tr>
+      <tr>
+        <td>event is a designated end-pole with no closing edge and no grounds yet laid — a
+        pure lure, <code>reaches</code> returns false in every direction that would ground it</td>
+        <td>THE LURE (yearning)</td>
+        <td>Rendered as reaching-toward, never as accomplished. "All of it leans toward the
+        ideal course, which recedes as ideals do."</td>
+      </tr>
+      <tr>
+        <td>an event is only reachable from the narrated vantage THROUGH one intermediate
+        beat — <code>reaches(vantage, event)</code> true but no direct edge
+        (<code>prehensionsFrom(vantage).some(e =&gt; e.object === event)</code> false)</td>
+        <td>MEDIATED</td>
+        <td>Bradshaw's construction — the telling stands between knower and known.
+        "Word of the outage arrived through the support thread."</td>
+      </tr>
+      <tr>
+        <td>the narrated-for vantage changes which beat is treated as "Now"</td>
+        <td>(re-render, same facts)</td>
+        <td>Different Nows put different events on different sides of the perfect/imperfective
+        line — the SAME event can be perfect for one vantage and imperfective for another. This
+        is the one-click party trick: no fact changes, only which beat plays Now.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="findings">
+  <h2>The finding</h2>
+  <p>Real feature or toy? <b>Both, honestly — and the ratio depends on what "prose"
+  is asked to carry.</b> As a <em>standup written by the graph</em> this is close to
+  real: the tense rules are a genuine, checkable read over the same kernel
+  <code>scher/test/mrs-dalloway.play.test.ts</code> already proves, and a team that trusts
+  its graph could plausibly read this instead of triaging fifteen cards by eye. As an
+  <em>accessibility voice-read</em> it is closer to real than toy for the same reason:
+  screen readers already want linear prose, and "closed, behind Now" IS more legible read
+  aloud as "was mended" than as a checkbox and a timestamp. As <em>the journal the
+  boardview-archaeology talk wished for</em> — a day you can read back years later and feel,
+  not just audit — it's presently a toy: the sentences are topology-accurate but
+  emotionally flat; a real journal needs texture (why it mattered, not just when it
+  closed) that the graph doesn't carry and this muslin doesn't fake.</p>
+  <div class="break">
+    <b>What breaks: prose order.</b> Narrative wants <em>causality order</em> — the order a
+    reader needs to make sense of consequence (grounds before what they ground, the
+    telling before the party that received it) — not <em>timestamp order</em>. This muslin's
+    ordering read is a topological sort over <code>q-grounding</code> edges reachable from
+    each vantage's Now (a fixed-point walk seeded at the beats with no ungrounded
+    parent within the shown set, breaking ties by witnessed-time only when causality is
+    silent). It is NOT a general solution: two independent straddlers (the imperfective
+    pair) have no causal order between them at all, so the muslin falls back to
+    alphabetic-by-slug for ties, which is arbitrary and visibly so — Clarissa's paragraph
+    and Septimus's paragraph could just as honestly print in the other order, and nothing
+    in the graph says which reads first. A real version would need an explicit "which
+    straddler does the reader meet first" rule, and that rule is authorial, not
+    topological — the graph runs out before the prose does.</p>
+  </div>
+</div>
+
+<div class="tear">Tear this apart.</div>
+
+<script>
+// narrator-view-muslin.js — the generator. RECESS muslin, cheap cotton.
+//
+// Fake-but-graph-shaped data: a tiny in-memory Society (slug/content/subject/object,
+// q-grounding edges, closable End poles) — the SAME shape scher/src/society.ts reads,
+// re-implemented small and standalone here on purpose (a muslin does not import the
+// real kernel; it fakes the SHAPE of the read, cheaply, so the question — "can topology
+// choose grammar?" — stays visible and cuttable). No invented facts reach the page:
+// every sentence below is produced by walking these edges, never typed as prose first.
+
+(function () {
+  "use strict";
+
+  // ── THE FAKE GRAPH ─────────────────────────────────────────────────────────
+  // beats: { slug, content, title, closed, witnessed, laid_by }
+  // edges: { subject, object, quality }  // subject "grounds in" object (subject prehends object)
+  const beats = {};
+  const edges = []; // q-grounding edges only, this muslin's one quality
+  function lay(slug, content, opts) {
+    beats[slug] = Object.assign({ slug, content, closed: false, witnessed: null, laid_by: null }, opts || {});
+  }
+  function grounds(later, earlier) {
+    edges.push({ subject: later, object: earlier, quality: "q-grounding" });
+  }
+  function close(slug) { beats[slug].closed = true; }
+
+  const lures = []; // separate quality (this muslin's stand-in for q-lure): a vantage
+  // "leans toward" a beat without grounding it — reaching that must never feed the
+  // causal/grounding walk (a lure is not a fact gathered, it's a fact yearned for).
+  function leansToward(vantage, slug) { lures.push({ vantage, slug }); }
+
+  function prehensionsFrom(slug) { return edges.filter((e) => e.subject === slug); }
+  function prehensionsOnto(slug) { return edges.filter((e) => e.object === slug); }
+  function reaches(from, to, seen) {
+    if (from === to) return true;
+    seen = seen || new Set();
+    if (seen.has(from)) return false;
+    seen.add(from);
+    return prehensionsFrom(from).some((e) => reaches(e.object, to, seen));
+  }
+  function endActual(slug) { return !!beats[slug] && beats[slug].closed; }
+
+  // ── THE DAY'S BEATS (fake-but-shaped) ───────────────────────────────────────
+  // A Now-anchor per vantage: different vantages plant Now at a different beat —
+  // the party trick. Each vantage's Now is itself a beat in the same graph.
+  lay("now-hallie", "hallie's Now, midafternoon", { witnessed: 3 });
+  lay("now-jon", "jon's Now, first thing this morning, before standup", { witnessed: 1 });
+  lay("now-sprint", "the sprint's Now, end-of-week retro vantage", { witnessed: 6 });
+
+  // PERFECT: the quiz import, mended by midmorning
+  lay("quiz-import-broke", "the quiz import broke overnight", { witnessed: 0 });
+  lay("quiz-import-mended", "the quiz import was mended", { title: "Quiz import", witnessed: 2 });
+  close("quiz-import-mended");
+  grounds("quiz-import-mended", "quiz-import-broke");
+  grounds("now-hallie", "quiz-import-mended");
+  grounds("now-jon", "quiz-import-mended");
+  grounds("now-sprint", "quiz-import-mended");
+
+  // IMPERFECTIVE (straddler): the drawer work — still underway at hallie's Now
+  lay("drawer-work", "the drawer work: begun, unfinished, astride the hour", { title: "Drawer muslin", witnessed: 2.5 });
+  grounds("drawer-work", "quiz-import-mended"); // began after the morning's mend
+  grounds("now-hallie", "drawer-work"); // hallie's Now reaches it — it's in her cone
+  // NOT closed — no closing edge. reaches(drawer-work, now-hallie) is false (no edge that way);
+  // reaches(now-hallie, drawer-work) is true. Straddler: inside hallie's cone, not behind it.
+
+  // Second straddler, mutually unordered with drawer-work — the Mrs Dalloway pair
+  lay("kanban-help-work", "the kanban docs: also underway, its own thread", { title: "Kanban help docs", witnessed: 2.6 });
+  grounds("kanban-help-work", "quiz-import-mended");
+  grounds("now-hallie", "kanban-help-work");
+  // No edge between drawer-work and kanban-help-work in either direction: genuinely concurrent.
+
+  // FUTURE PERFECT: the release, scripted for Friday; grounds already gathered
+  lay("release-container-proven", "the release container already proven in CI", { witnessed: 2.2 });
+  close("release-container-proven"); // its own grounds are already actual — this is what makes release-to-jon future-perfect
+  grounds("release-container-proven", "quiz-import-mended");
+  lay("release-to-jon", "the release: goes to Jon Friday", { title: "Release to Jon", witnessed: null });
+  grounds("release-to-jon", "release-container-proven"); // E (container proven) before R (Friday's release)
+  // NOTE (seam, found live in Chrome verification of this muslin): a direct edge
+  // now-sprint -> release-to-jon would make classify() read "Now sits INSIDE this
+  // event's span" (nowInsideSpan) and misfire imperfective instead of future-perfect —
+  // grounds is being asked to carry two different meanings (cone-membership vs
+  // containment) and the fixture must not conflate them. Fixed by reaching
+  // release-to-jon only THROUGH released-actual (which now-sprint does directly
+  // ground in): the sprint's Now sees the release only via its already-actual
+  // closing, never as a span it sits inside.
+  lay("released-actual", "released", { witnessed: 6 });
+  close("released-actual");
+  grounds("released-actual", "release-to-jon");
+  grounds("now-sprint", "released-actual");
+
+  // THE LURE: the ideal course — a pure yearning, no grounds gathered at all
+  lay("the-ideal-course", "the ideal course: every card triaged the moment it lands", { title: "The ideal course" });
+  // deliberately: no closing edge, no q-grounding edge from anything TO it — grounding
+  // would make it a fact gathered, not a lure yearned for. Instead every vantage
+  // "leans toward" it on the separate q-lure-shaped channel (leansToward), which the
+  // causal-order walk below never touches — the lure never gets to pretend it's grounded.
+  leansToward("now-hallie", "the-ideal-course");
+  leansToward("now-jon", "the-ideal-course");
+  leansToward("now-sprint", "the-ideal-course");
+
+  // MEDIATED: the outage, known to hallie only through the support thread's telling
+  lay("outage", "an outage on the ingest worker", { witnessed: 1.5 });
+  lay("support-thread-telling", "word of the outage, carried by the support thread", { title: "Support thread" });
+  grounds("support-thread-telling", "outage");
+  grounds("now-hallie", "support-thread-telling");
+  // NO direct edge now-hallie -> outage is ever laid — Bradshaw's construction, structurally.
+
+  // JON's OWN vantage sees the outage directly — he was paged; no mediation for him.
+  grounds("now-jon", "outage");
+
+  const VANTAGE_NOW = { hallie: "now-hallie", jon: "now-jon", sprint: "now-sprint" };
+
+  // Mediation is tagged explicitly, per vantage — NOT inferred from "any indirect
+  // reach," because that would over-fire: release-to-jon is reached from now-sprint
+  // only through released-actual too, but that is plain grounding (the release's own
+  // closing), not a telling standing between a knower and a known event. Bradshaw's
+  // construction is a specific topology (a witness's telling, not the event itself,
+  // sitting in the cone) and this muslin marks it rather than pattern-matching hop-count.
+  // (Found live in Chrome verification: the naive "no direct edge = mediated" rule
+  // misclassified the future-perfect release as mediated. Fixed by naming the real cases.)
+  const MEDIATED = {
+    hallie: { outage: "support-thread-telling" }, // hallie never pages on-call; she hears it secondhand
+    // jon was paged directly — no mediation for him (grounds("now-jon","outage") is direct)
+    // the-sprint retro never touches the outage at all — out of cone, not rendered
+  };
+
+  // ── THE READS: topology → tense (the rules table, executable) ──────────────
+  function classify(slug, vantage) {
+    const now = VANTAGE_NOW[vantage];
+    const b = beats[slug];
+    const inCone = reaches(now, slug);
+    const isLure = lures.some((l) => l.vantage === now && l.slug === slug);
+    if (!inCone && !isLure) return null; // not part of this vantage's day at all — never rendered
+
+    if (isLure && !inCone) {
+      // reached only via the separate q-lure channel, never via q-grounding — this is
+      // exactly the lure rule: nothing gathered toward it, only leaned toward.
+      return { tense: "lure", why: `"${slug}" is reached only via leansToward("${now}", "${slug}") — no q-grounding edge feeds it at all. Rendered as yearning, never as accomplished.` };
+    }
+
+    const mediaVia = MEDIATED[vantage] && MEDIATED[vantage][slug];
+    if (mediaVia) {
+      return { tense: "mediated", via: mediaVia, why:
+        `tagged mediation: reaches("${now}", "${slug}") is true, but only through the telling "${mediaVia}" — no direct edge ${now}→${slug}, and the bridge IS a telling, not plain grounding.` };
+    }
+
+    if (endActual(slug)) {
+      return { tense: "perfect", why: `endActual("${slug}") === true, and reaches("${now}", "${slug}") === true: closed and behind this Now.` };
+    }
+
+    // scripted-ahead check: does the slug have grounds already actual, but is itself not closed,
+    // and is it NOT the case that "now" is inside its own span (no reverse edge slug -> now)?
+    const hasActualGrounds = prehensionsFrom(slug).some((e) => endActual(e.object) || classify(e.object, vantage)?.tense === "perfect");
+    const nowInsideSpan = prehensionsFrom(now).some((e) => e.object === slug); // now directly grounds in slug = now is inside it
+
+    if (!endActual(slug) && hasActualGrounds && !nowInsideSpan) {
+      return { tense: "futureperfect", why:
+        `endActual("${slug}") === false, but its grounds are already actual (E before R) and "${now}" does not sit inside its span — scripted ahead, grounds gathered.` };
+    }
+
+    if (nowInsideSpan && !endActual(slug)) {
+      return { tense: "imperfective", why:
+        `endActual("${slug}") === false and "${now}" directly grounds in "${slug}" — the reference point sits INSIDE the event's span.` };
+    }
+
+    // pure lure: nothing grounds it yet, it only ever appears as a destination of reaching
+    const anyGrounds = prehensionsFrom(slug).length > 0;
+    if (!anyGrounds) {
+      return { tense: "lure", why: `"${slug}" has no q-grounding edges of its own — nothing gathered toward it. Rendered as yearning, not as accomplished.` };
+    }
+
+    return { tense: "imperfective", why: `fallback: open, in-cone, no cleaner rule fired.` };
+  }
+
+  // ── CAUSALITY-ORDER (not timestamp order) ───────────────────────────────────
+  // Topological sort over q-grounding edges restricted to the vantage's cone: a beat
+  // prints only after every beat it grounds in has printed. Ties (no causal order
+  // between two beats — the straddler problem) break alphabetically by slug, which
+  // is arbitrary and admitted as such in the NOTES/finding.
+  function causalOrder(slugs, vantage) {
+    const inSet = new Set(slugs);
+    const grounded = (s) => prehensionsFrom(s).map((e) => e.object).filter((o) => inSet.has(o));
+    const printed = new Set();
+    const out = [];
+    let guard = 0;
+    while (out.length < slugs.length && guard++ < 1000) {
+      const ready = slugs
+        .filter((s) => !printed.has(s) && grounded(s).every((g) => printed.has(g)))
+        .sort(); // arbitrary tie-break — see finding
+      if (ready.length === 0) break; // cycle guard, shouldn't happen in this fixture
+      ready.forEach((s) => { out.push(s); printed.add(s); });
+    }
+    return out;
+  }
+
+  // ── SENTENCE TEMPLATES (per tense; the only place English happens) ─────────
+  const TEMPLATES = {
+    perfect: (b) => `${cap(b.content)}.`,
+    imperfective: (b) => `${cap(b.content)} — still underway.`,
+    futureperfect: (b) => `By the time this is read, ${lower(b.content)} will have been carried through; its grounds are already proven.`,
+    lure: (b) => `All work leans toward it: ${lower(b.content)} — an ideal that recedes as ideals do.`,
+    mediated: (b, via) => `Word of it — ${lower(b.content)} — arrived only through ${lower(beats[via].content)}.`,
+  };
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+  function lower(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+
+  const RENDERED_SLUGS = [
+    "quiz-import-mended", "drawer-work", "kanban-help-work",
+    "release-to-jon", "the-ideal-course", "outage",
+  ];
+
+  const DATELINES = {
+    hallie: "Wednesday, 16 July 2026 — narrated for hallie, midafternoon vantage",
+    jon: "Wednesday, 16 July 2026 — narrated for jon, before-standup vantage",
+    sprint: "Wednesday, 16 July 2026 — narrated for the-sprint, end-of-week retro vantage",
+  };
+
+  function render(vantage) {
+    document.getElementById("dateline").textContent = DATELINES[vantage];
+    const classified = RENDERED_SLUGS
+      .map((slug) => ({ slug, c: classify(slug, vantage) }))
+      .filter((x) => x.c !== null);
+    const order = causalOrder(classified.map((x) => x.slug), vantage);
+    const bySlug = Object.fromEntries(classified.map((x) => [x.slug, x.c]));
+
+    const article = document.getElementById("prose");
+    article.innerHTML = "";
+    order.forEach((slug) => {
+      const b = beats[slug];
+      const c = bySlug[slug];
+      const p = document.createElement("p");
+      const span = document.createElement("span");
+      span.className = "s-" + c.tense;
+      span.textContent = TEMPLATES[c.tense](b, c.via);
+      p.appendChild(span);
+      article.appendChild(p);
+
+      const tip = document.createElement("div");
+      tip.className = "seam-tip";
+      tip.textContent = `[read] slug="${slug}"  tense=${c.tense}  ${c.why}`;
+      article.appendChild(tip);
+    });
+  }
+
+  function currentVantage() {
+    return document.querySelector('input[name="vantage"]:checked').value;
+  }
+
+  document.querySelectorAll('input[name="vantage"]').forEach((el) => {
+    el.addEventListener("change", () => render(currentVantage()));
+  });
+  const readsBtn = document.getElementById("readsToggle");
+  readsBtn.addEventListener("click", () => {
+    document.body.classList.toggle("reads-on");
+    readsBtn.classList.toggle("active");
+  });
+
+  render(currentVantage());
+})();
+
+</script>
+</body>
+</html>
