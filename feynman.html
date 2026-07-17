@@ -1,0 +1,370 @@
+<!-- ⚠ MUSLIN / NOT REAL — RECESS PLAY FRAME.
+     Cheap cotton: hardcoded fake day, three frames, a handful of vertices.
+     Basting stitches left in on purpose (see .seam-note callouts, the
+     unstyled system-font labels, the dashed occluded edge, the janky
+     hand-drawn wobble on every line). Do not mistake this for a real
+     view layer. Question this muslin exists to answer: does the graph
+     read as a Feynman diagram, and does the mapping teach anything the
+     board hides? See docs/muslins/feynman-view-muslin/NOTES.md. -->
+<meta charset="utf-8">
+<title>[MUSLIN] feynman-view diagram</title>
+<style>
+  body {
+    font-family: "Courier New", monospace;
+    background: #f7f3e8;
+    color: #2a2a24;
+    max-width: 880px;
+    margin: 2rem auto;
+    padding: 0 1rem 4rem;
+  }
+  .banner {
+    border: 3px dashed #c9a227;
+    background: repeating-linear-gradient(45deg,#f5e9c8,#f5e9c8 12px,#faf3dd 12px,#faf3dd 24px);
+    padding: .8rem 1rem;
+    font-size: .82rem;
+    margin-bottom: 1.5rem;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 .2rem; }
+  .sub { font-style: italic; color: #6b6a5f; margin-bottom: 1rem; }
+  .seam-note {
+    font-size: .75rem;
+    color: #8a3b1a;
+    background: #fdf0e6;
+    border-left: 3px solid #c9622a;
+    padding: .4rem .6rem;
+    margin: .6rem 0;
+  }
+  #stage-wrap {
+    position: relative;
+    border: 2px solid #999;
+    background: #fffdf7;
+    background-image:
+      radial-gradient(#00000012 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+  svg { display: block; width: 100%; height: 480px; }
+  .frame-line {
+    fill: none;
+    stroke-width: 3;
+    cursor: pointer;
+  }
+  .frame-line.dimmed { opacity: .15; }
+  .frame-line.highlighted { stroke-width: 5.5; filter: drop-shadow(0 0 3px rgba(0,0,0,.35)); }
+  .occluded {
+    stroke-dasharray: 6 5;
+    opacity: .55;
+  }
+  .leg {
+    stroke-dasharray: 2 5;
+  }
+  .vertex {
+    cursor: pointer;
+    stroke: #2a2a24;
+    stroke-width: 1.5;
+  }
+  .vertex:hover { stroke-width: 3; }
+  .vertex-label {
+    font-size: 11px;
+    font-family: "Courier New", monospace;
+    fill: #2a2a24;
+    pointer-events: none;
+  }
+  .axis-label { font-size: 12px; fill: #6b6a5f; font-style: italic; }
+  #now-line {
+    stroke: #b23b3b;
+    stroke-width: 2;
+    stroke-dasharray: 3 3;
+  }
+  #vertex-detail {
+    margin-top: .6rem;
+    min-height: 2.4rem;
+    font-size: .85rem;
+    padding: .5rem .7rem;
+    background: #fff;
+    border: 1px solid #ddd;
+  }
+  #vertex-detail .placeholder { color: #999; font-style: italic; }
+  .controls {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1.2rem;
+    align-items: center;
+    font-size: .85rem;
+    flex-wrap: wrap;
+  }
+  .controls input[type=range] { width: 260px; }
+  .legend {
+    margin-top: 1rem;
+    display: flex;
+    gap: 1.4rem;
+    flex-wrap: wrap;
+    font-size: .78rem;
+  }
+  .legend span.swatch {
+    display: inline-block;
+    width: 22px;
+    height: 3px;
+    margin-right: .3rem;
+    vertical-align: middle;
+  }
+  table.mapping {
+    margin-top: 2rem;
+    border-collapse: collapse;
+    width: 100%;
+    font-size: .8rem;
+  }
+  table.mapping th, table.mapping td {
+    border: 1px solid #ccc;
+    padding: .35rem .5rem;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.mapping th { background: #f0ead8; }
+  footer {
+    margin-top: 2rem;
+    font-size: .8rem;
+    color: #6b6a5f;
+    border-top: 1px dashed #ccc;
+    padding-top: .8rem;
+  }
+</style>
+
+<div class="banner">
+  ⚠ MUSLIN / NOT REAL — RECESS crew, play frame. Hardcoded fake day (two human
+  frames + one agent frame). Built to test ONE question: does this graph read
+  as a Feynman diagram, and does the reading teach anything the board hides?
+  Tear it apart — see NOTES.md for the mapping table, what breaks, and the
+  finding this muslin is after.
+</div>
+
+<h1>feynman-view muslin</h1>
+<div class="sub">frames as world-lines · events as vertices · prehension edges as propagators · charges as external legs</div>
+
+<div class="seam-note">
+  SEAM: lines are hand-jittered path data, not a real layout engine — nudge
+  the SVG viewBox and watch them wobble unevenly. Real version would need an
+  actual force/lane layout per frame. This is cotton, not silk.
+</div>
+
+<div id="stage-wrap">
+  <svg id="diagram" viewBox="0 0 880 480" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<div class="controls">
+  <label>Now-slice (observer time): <input id="now-slider" type="range" min="0" max="880" value="880"></label>
+  <span id="now-readout">t = 880 (all vertices behind Now = DONE)</span>
+</div>
+
+<div class="legend">
+  <div><span class="swatch" style="background:#3b6ea5"></span>frame-hallie (fermion line, solid)</div>
+  <div><span class="swatch" style="background:#8a4fae"></span>frame-jamie (fermion line, solid)</div>
+  <div><span class="swatch" style="background:#2f9e5e"></span>frame-claude (agent line, solid, thinner)</div>
+  <div><span class="swatch" style="background:#c9a227;border-top:2px dashed #c9a227;height:0"></span>occluded edge (virtual/dashed)</div>
+  <div><span class="swatch" style="background:#b23b3b;border-top:2px dashed #b23b3b;height:0"></span>charge leg → "The Good" (asymptotic, never terminates)</div>
+</div>
+
+<div id="vertex-detail"><span class="placeholder">hover a line to trace a world-line · click a vertex for its label</span></div>
+
+<table class="mapping">
+  <thead><tr><th>physics term</th><th>graph term (this muslin)</th><th>note</th></tr></thead>
+  <tbody>
+    <tr><td>time axis</td><td>x-axis, left→right</td><td>chosen arbitrarily; see NOTES for why horizontal beat vertical</td></tr>
+    <tr><td>fermion world-line</td><td>a frame's thread through the day</td><td>solid, continuous — a frame persists between events</td></tr>
+    <tr><td>vertex (interaction)</td><td>an event where ≥2 lines meet</td><td>capture=emission, conversation=exchange, done=absorption</td></tr>
+    <tr><td>propagator</td><td>a prehension edge between two vertices</td><td>internal line, connects vertices not frames directly</td></tr>
+    <tr><td>external leg (asymptotic state)</td><td>a charge toward a sublime</td><td>never terminates — drawn running off the diagram edge</td></tr>
+    <tr><td>virtual line</td><td>an occluded edge</td><td>dashed: happened in the amplitude, not in this frame's observation</td></tr>
+    <tr><td>observer's light-cone / Now-slice</td><td>the Now-slider</td><td>vertices left of it shade as DONE</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  RECESS · feynman-view muslin · fake data only · see
+  <code>docs/muslins/feynman-view-muslin/NOTES.md</code> for the full mapping
+  table, what breaks, and the finding. Tear this apart.
+</footer>
+
+<script>
+(function () {
+  const svg = document.getElementById('diagram');
+  const NS = 'http://www.w3.org/2000/svg';
+
+  // --- FAKE DATA -----------------------------------------------------
+  // Three world-lines. Coordinates hand-picked to look diagram-like, not
+  // computed. y is just a lane per frame (world-lines don't cross lanes
+  // in this muslin — a real layout would let vertices pull lines toward
+  // each other, which is exactly the "virtual bending" a real Feynman
+  // diagram allows and this one fakes by literal proximity only).
+  const frames = {
+    hallie: { color: '#3b6ea5', y: 120, label: 'frame-hallie', width: 3.5 },
+    jamie:  { color: '#8a4fae', y: 260, label: 'frame-jamie', width: 3.5 },
+    claude: { color: '#2f9e5e', y: 390, label: 'frame-claude', width: 2.5 }
+  };
+
+  // vertices: id, x (time), frames involved, label, kind
+  const vertices = [
+    { id: 'v1', x: 90,  y: 120, frame: 'hallie', label: 'capture: "muslin idea"', kind: 'emission' },
+    { id: 'v2', x: 220, y: 260, frame: 'jamie',  label: 'capture: "feynman?"', kind: 'emission' },
+    { id: 'v3', x: 340, y: 190, frame: null,     label: 'conversation: hallie ↔ jamie', kind: 'exchange', pair: ['hallie','jamie'] },
+    { id: 'v4', x: 470, y: 325, frame: null,     label: 'delegation: jamie ↔ claude', kind: 'exchange', pair: ['jamie','claude'] },
+    { id: 'v5', x: 610, y: 390, frame: 'claude', label: 'draft emitted', kind: 'emission' },
+    { id: 'v6', x: 700, y: 255, frame: null,     label: 'review: claude ↔ jamie (occluded)', kind: 'exchange', pair: ['claude','jamie'], occluded: true },
+    { id: 'v7', x: 760, y: 120, frame: 'hallie', label: 'done: ruled "gorgeous"', kind: 'absorption' },
+    { id: 'v8', x: 620, y: 120, frame: 'hallie', label: 'charge exits: toward The Good', kind: 'charge' }
+  ];
+
+  const propagators = [
+    ['v1','v3'], ['v2','v3'], ['v3','v4'], ['v4','v5'], ['v4','v6'], ['v6','v7']
+  ];
+
+  // --- hand-jittered path helper (seam: fake wobble, not a real layout) --
+  function jitter(x, y, seed) {
+    const j = Math.sin(seed * 12.9898) * 3.5;
+    return [x, y + j];
+  }
+
+  function wobblyPath(points) {
+    let d = `M ${points[0][0]} ${points[0][1]}`;
+    for (let i = 1; i < points.length; i++) {
+      const [px, py] = points[i-1];
+      const [x, y] = points[i];
+      const mx = (px + x) / 2 + Math.sin(i * 3.1) * 6;
+      const my = (py + y) / 2 + Math.cos(i * 2.3) * 4;
+      d += ` Q ${mx} ${my} ${x} ${y}`;
+    }
+    return d;
+  }
+
+  // --- draw axis --------------------------------------------------------
+  const axisText = document.createElementNS(NS, 'text');
+  axisText.setAttribute('x', 400); axisText.setAttribute('y', 470);
+  axisText.setAttribute('class', 'axis-label'); axisText.textContent = '— time (left → right, chosen: reads with reading direction) —';
+  svg.appendChild(axisText);
+
+  // --- draw each frame's world-line as one wobbly path through its own vertices, edge to edge --
+  const framePoints = { hallie: [[20,120]], jamie: [[20,260]], claude: [[300,390]] };
+  vertices.forEach(v => {
+    if (v.frame && framePoints[v.frame]) framePoints[v.frame].push([v.x, v.y]);
+  });
+  framePoints.hallie.push([860, 120]);
+  framePoints.jamie.push([860, 260]);
+  framePoints.claude.push([860, 390]);
+
+  const lineEls = {};
+  Object.keys(frames).forEach((key, idx) => {
+    const f = frames[key];
+    const pts = framePoints[key].map((p, i) => jitter(p[0], p[1], i + idx));
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', wobblyPath(pts));
+    path.setAttribute('class', 'frame-line');
+    path.setAttribute('stroke', f.color);
+    path.setAttribute('stroke-width', f.width);
+    path.dataset.frame = key;
+    svg.appendChild(path);
+    lineEls[key] = path;
+
+    // label at line start
+    const label = document.createElementNS(NS, 'text');
+    label.setAttribute('x', 24); label.setAttribute('y', pts[0][1] - 10);
+    label.setAttribute('class', 'vertex-label');
+    label.setAttribute('font-weight', 'bold');
+    label.setAttribute('fill', f.color);
+    label.textContent = f.label;
+    svg.appendChild(label);
+
+    path.addEventListener('mouseenter', () => highlight(key));
+    path.addEventListener('mouseleave', clearHighlight);
+  });
+
+  // --- draw propagators (internal lines between vertices) --------------
+  const vmap = {}; vertices.forEach(v => vmap[v.id] = v);
+  propagators.forEach(([aId, bId]) => {
+    const a = vmap[aId], b = vmap[bId];
+    const isOccluded = a.occluded || b.occluded;
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d', `M ${a.x} ${a.y} L ${b.x} ${b.y}`);
+    path.setAttribute('stroke', '#7a7a6f');
+    path.setAttribute('stroke-width', 1.6);
+    path.setAttribute('fill', 'none');
+    if (isOccluded) path.setAttribute('class', 'occluded');
+    svg.appendChild(path);
+  });
+
+  // --- charge leg exiting toward "The Good" (asymptotic, never terminates) --
+  const chargeV = vmap['v8'];
+  const leg = document.createElementNS(NS, 'path');
+  leg.setAttribute('d', `M ${chargeV.x} ${chargeV.y} L ${chargeV.x + 40} ${chargeV.y - 90}`);
+  leg.setAttribute('stroke', '#b23b3b');
+  leg.setAttribute('stroke-width', 2);
+  leg.setAttribute('class', 'leg');
+  leg.setAttribute('fill', 'none');
+  svg.appendChild(leg);
+  const legLabel = document.createElementNS(NS, 'text');
+  legLabel.setAttribute('x', chargeV.x + 44); legLabel.setAttribute('y', chargeV.y - 92);
+  legLabel.setAttribute('class', 'vertex-label'); legLabel.setAttribute('fill', '#b23b3b');
+  legLabel.textContent = '→ The Good (∞, never actual)';
+  svg.appendChild(legLabel);
+
+  // --- draw vertices -----------------------------------------------------
+  const vertexEls = {};
+  vertices.forEach(v => {
+    if (v.kind === 'charge') return; // drawn via the leg above, dot still shown
+    const dot = document.createElementNS(NS, 'circle');
+    dot.setAttribute('cx', v.x); dot.setAttribute('cy', v.y);
+    dot.setAttribute('r', v.kind === 'exchange' ? 7 : 5.5);
+    dot.setAttribute('fill', v.occluded ? '#f5e9c8' : (v.kind === 'absorption' ? '#2a2a24' : '#fff'));
+    dot.setAttribute('class', 'vertex');
+    dot.dataset.id = v.id;
+    svg.appendChild(dot);
+    vertexEls[v.id] = dot;
+    dot.addEventListener('click', () => showDetail(v));
+  });
+  // charge vertex dot too
+  const chargeDot = document.createElementNS(NS, 'circle');
+  chargeDot.setAttribute('cx', chargeV.x); chargeDot.setAttribute('cy', chargeV.y);
+  chargeDot.setAttribute('r', 5.5); chargeDot.setAttribute('fill', '#b23b3b');
+  chargeDot.setAttribute('class', 'vertex');
+  svg.appendChild(chargeDot);
+  chargeDot.addEventListener('click', () => showDetail(chargeV));
+
+  // --- Now-slice line + shading -------------------------------------------
+  const nowLine = document.createElementNS(NS, 'line');
+  nowLine.id = 'now-line';
+  nowLine.setAttribute('x1', 880); nowLine.setAttribute('y1', 10);
+  nowLine.setAttribute('x2', 880); nowLine.setAttribute('y2', 460);
+  svg.appendChild(nowLine);
+
+  function updateNow(x) {
+    nowLine.setAttribute('x1', x); nowLine.setAttribute('x2', x);
+    vertices.forEach(v => {
+      const el = v.kind === 'charge' ? chargeDot : vertexEls[v.id];
+      if (!el) return;
+      const done = v.x <= x;
+      el.setAttribute('opacity', done ? 1 : 0.3);
+      el.setAttribute('stroke', done ? '#2a2a24' : '#aaa');
+    });
+    const readout = document.getElementById('now-readout');
+    const doneCount = vertices.filter(v => v.x <= x).length;
+    readout.textContent = `t = ${x} — ${doneCount}/${vertices.length} vertices behind Now (DONE)`;
+  }
+  document.getElementById('now-slider').addEventListener('input', (e) => updateNow(+e.target.value));
+  updateNow(880);
+
+  // --- interactions --------------------------------------------------------
+  function highlight(key) {
+    Object.keys(lineEls).forEach(k => {
+      lineEls[k].classList.toggle('highlighted', k === key);
+      lineEls[k].classList.toggle('dimmed', k !== key);
+    });
+  }
+  function clearHighlight() {
+    Object.keys(lineEls).forEach(k => {
+      lineEls[k].classList.remove('highlighted', 'dimmed');
+    });
+  }
+  function showDetail(v) {
+    document.getElementById('vertex-detail').innerHTML =
+      `<strong>${v.id}</strong> — ${v.label}${v.occluded ? ' <em>(occluded: happened in the amplitude, not the observation)</em>' : ''} — kind: ${v.kind}`;
+  }
+})();
+</script>
