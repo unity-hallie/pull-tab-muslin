@@ -1,0 +1,411 @@
+<!-- MUSLIN — NOT REAL. Built 2026-07-17, sibling of api/static/muslins/email-style-muslin.html
+     (read it + docs/muslins/email-style-muslin/NOTES.md first — this muslin assumes that
+     one's ground: master-detail shell, ticket = event cone, requester/support/AI frames).
+     Hallie's seed, verbatim: "another one that actually functions as an email thread read
+     a bit." The email-style muslin staged the LIST (inbox of tickets). This one stages the
+     THREAD ITSELF — one ticket's whole life, read top-to-bottom as a correspondence, the
+     way opening a single Gmail thread shows every message stacked instead of a row per
+     subject line.
+
+     THE QUESTION: does one event's cone read as an email thread — and what does
+     THREADING mean in graph terms? See docs/muslins/thread-style-muslin/NOTES.md for the
+     full write-up and the three named forks. Built against the pull-tab-muslin idiom
+     (docs/muslins/pull-tab-muslin/NOTES.md) — same palette, same house law (no HTML5 DnD,
+     click-gated not hover-auto), same muslin register (banner, fake data, seams showing,
+     [does nothing yet] on every write path). -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>[MUSLIN] thread-style ticket-as-correspondence</title>
+<style>
+  body { font-family: 'Hanken Grotesk', Arial, sans-serif; background:#faf8f3; color:#23291f; margin:0; padding:1.4rem; }
+  h1 { font-family: Georgia, 'Source Serif 4', serif; font-size:1.4rem; margin:0 0 .3rem; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .fake { color:#aaa; font-size:.7em; font-family: ui-monospace, monospace; }
+  .banner { background: repeating-linear-gradient(45deg,#ffe08a,#ffe08a 12px,#fff3c4 12px,#fff3c4 24px);
+    border: 2px dashed #b08900; padding: .6rem 1rem; margin-bottom: 1rem; font-weight: bold; font-size:.82rem; line-height:1.5; }
+  .controls { display:flex; gap:1.1rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem;
+    padding:.6rem .9rem; background:#fff; border:1.5px dashed #999; font-size:.76rem; max-width:840px; margin-left:auto; margin-right:auto; }
+  .controls label { display:flex; align-items:center; gap:.35rem; cursor:pointer; }
+  .fork-note { font-size:.68rem; color:#8a6d12; }
+
+  .thread-wrap { max-width:840px; margin:0 auto; }
+
+  /* ===== subject header — ticket name + course chip + which ideal it charges toward
+     (mirrors email-style-muslin's queue-header, at thread-scope instead of queue-scope) ===== */
+  .subject-header { background:#fff; border:2px solid #23291f; box-shadow:3px 3px 0 #23291f18;
+    padding:.9rem 1.1rem; margin-bottom:1.2rem; }
+  .subject-header .subject-line { font-family:Georgia,'Source Serif 4',serif; font-size:1.25rem; font-weight:700; margin-bottom:.35rem; }
+  .subject-header .meta-row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; font-size:.78rem; color:#6b6f66; }
+  .subject-header .steers { font-size:.76rem; color:#6b6f66; }
+  .subject-header .steers b { color:#23291f; }
+  .course-chip { font-size:.6rem; font-family:ui-monospace,monospace; border:1px solid #4a7ec2; color:#2c5da0;
+    background:#eaf1fb; padding:.05rem .4rem; border-radius:10px; }
+  .status-chip { font-size:.6rem; font-family:ui-monospace,monospace; border:1px solid #7a8f5a; color:#4a6b2c;
+    background:#eef5e6; padding:.05rem .4rem; border-radius:10px; }
+  .status-chip.done { border-color:#999; color:#777; background:#eee; }
+  .related-stub { font-size:.68rem; font-family:ui-monospace,monospace; color:#8a6508; border:1px dashed #b08900;
+    background:#fff7d6; padding:.1rem .5rem; border-radius:10px; margin-left:auto; cursor:default; }
+
+  /* ===== related-thread kinship tease (fork 3) ===== */
+  .kinship-note { font-size:.7rem; color:#8a8f82; margin-top:.4rem; font-style:italic; }
+
+  /* ===== message stack ===== */
+  .msg { background:#fff; border:1px solid #ddd6c4; border-radius:6px; margin-bottom:.6rem;
+    box-shadow:1px 2px 0 #23291f0d; overflow:hidden; }
+  .msg-head { display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; cursor:pointer; }
+  .msg-head:hover { background:#fbf7e8; }
+  .msg-avatar { width:28px; height:28px; border-radius:50%; flex:none; display:flex; align-items:center;
+    justify-content:center; font-size:.7rem; font-weight:700; color:#fff; }
+  .msg.kind-capture .msg-avatar { background:#4a7ec2; }
+  .msg.kind-comment .msg-avatar { background:#7a8f5a; }
+  .msg.kind-triage .msg-avatar { background:#b08900; }
+  .msg.kind-receipt .msg-avatar { background:#8a5a9e; }
+  .msg-from { font-weight:700; font-size:.86rem; flex:1; }
+  .msg-when { font-size:.68rem; color:#aaa; }
+  .msg-kind-tag { font-size:.56rem; font-family:ui-monospace,monospace; text-transform:uppercase; letter-spacing:.04em;
+    color:#999; border:1px dashed #ccc; padding:.05rem .35rem; border-radius:8px; }
+  .msg-body { padding:0 .85rem .8rem 3.25rem; font-size:.86rem; line-height:1.45; }
+  .msg-body .quote-block { border-left:3px solid #c9c2ac; margin:.4rem 0 .5rem; padding:.25rem .7rem;
+    font-size:.8rem; color:#767a6e; background:#faf8f2; }
+  .msg-body .quote-block .quote-attrib { font-size:.66rem; color:#a8ad9e; margin-bottom:.15rem; }
+  .receipt-block { border:1px dashed #8a5a9e; background:#f7f0fb; padding:.45rem .7rem; border-radius:5px;
+    font-family:ui-monospace,monospace; font-size:.78rem; color:#5c3a6e; }
+  .ai-stub-row { margin-top:.5rem; display:flex; gap:.5rem; }
+  .ai-stub-row button { font-size:.72rem; padding:.3rem .65rem; border:1.5px solid #b08900; border-radius:4px;
+    background:#fff7d6; cursor:pointer; font-weight:600; color:#8a6508; }
+  .ai-stub-row button:hover { background:#ffe9a1; }
+  .ai-stub-row button.confirm { border-color:#4a6b2c; color:#4a6b2c; background:#eef5e6; }
+  .ai-stub-row button.confirm:hover { background:#dcedc8; }
+  .door-refusal { border:1.5px dashed #c0392b; background:#fdf1ef; padding:.5rem .7rem; border-radius:5px;
+    font-size:.8rem; color:#a4342a; }
+
+  /* ===== system-line — quiet state-change separators, email's "X replied" convention ===== */
+  .sysline { display:flex; align-items:center; gap:.6rem; padding:.35rem .85rem .35rem 3.25rem; font-size:.72rem;
+    color:#9a9d90; font-family:ui-monospace,monospace; }
+  .sysline::before { content:'—'; color:#ccc; }
+  .sysline .sys-tag { border:1px dotted #ccc; padding:0 .35em; border-radius:8px; }
+
+  /* ===== collapsed stack — email-style "N earlier messages" ===== */
+  .collapsed-stack { display:flex; align-items:center; gap:.5rem; padding:.5rem .85rem; background:#f3f1ea;
+    border:1px dashed #ccc4b3; border-radius:6px; margin-bottom:.6rem; cursor:pointer; font-size:.78rem; color:#767a6e; }
+  .collapsed-stack:hover { background:#ece9de; }
+  .collapsed-stack .stack-count { font-family:ui-monospace,monospace; font-weight:700; }
+
+  /* ===== quoting-as-prehension callout (named per Hallie's ask: quoting IS prehension
+     made visible — meaning is in the edges) ===== */
+  .prehend-note { font-size:.6rem; font-family:ui-monospace,monospace; color:#8a8f82; margin-top:.2rem;
+    display:flex; align-items:center; gap:.3rem; }
+  .prehend-note::before { content:'⤷ prehends'; color:#a8ad9e; }
+
+  /* ===== reply composer — bottom, Now-lives-here, cited law ===== */
+  .composer { border-top:2px dashed #23291f; padding:.9rem 1rem; background:#fbfaf5; margin-top:.4rem; }
+  .composer-label { font-family:ui-monospace,monospace; font-size:.62rem; text-transform:uppercase;
+    letter-spacing:.05em; color:#8a6d12; margin-bottom:.5rem; }
+  .quote-ref { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; font-size:.72rem;
+    background:#fff3c4; border:1px dashed #b08900; padding:.3rem .55rem; border-radius:4px; color:#6b5504; }
+  .quote-ref button { margin-left:auto; font-size:.68rem; border:1px solid #b08900; background:#fff; border-radius:3px;
+    cursor:pointer; padding:.1rem .4rem; }
+  .compose-row { display:flex; gap:.4rem; }
+  .compose-input { flex:1; font-size:.85rem; padding:.5rem .7rem; border:1.5px solid #23291f; border-radius:4px; }
+  .compose-submit { font-size:.8rem; padding:.5rem .9rem; border:1.5px solid #23291f; border-radius:4px;
+    background:#f1efe8; cursor:pointer; font-weight:600; }
+  .compose-submit:hover { background:#ffe08a; }
+  .now-here { font-size:.58rem; font-family:ui-monospace,monospace; color:#b08900; margin-left:.4rem; }
+
+  .bucket-label { display:inline-block; font-size:.52rem; font-family:ui-monospace,monospace; letter-spacing:.03em;
+    color:#c0392b; background:#fff; padding:0 .3em; border:1px dashed #c0392b; border-radius:3px; opacity:.85;
+    margin-left:.5rem; vertical-align:middle; }
+  .reply-to-btn { font-size:.6rem; font-family:ui-monospace,monospace; color:#767a6e; background:none;
+    border:1px dotted #ccc; border-radius:8px; padding:.05rem .4rem; cursor:pointer; margin-left:.4rem; }
+  .reply-to-btn:hover { background:#f3f1ea; }
+
+  footer.notes { max-width:840px; margin:1.4rem auto; font-size:.76rem; opacity:.75; line-height:1.5; }
+  code { background:#eee; padding:0 .25em; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="banner mono">MUSLIN / NOT REAL — thread-style projection over ONE TICKET'S whole life.
+  Sibling of <code>email-style-muslin.html</code> (that one staged the ticket LIST; this one
+  opens a SINGLE thread and reads its whole cone top to bottom, correspondence-style). Hallie's
+  seed: "another one that actually functions as an email thread read a bit."
+  <br><b>THE KEY MOVE:</b> the "messages" below are NOT invented chat lines — they are the
+  ticket's REAL event kinds (capture, comment, triage guess, work receipt, state change)
+  wearing correspondence dress. See <code>docs/muslins/thread-style-muslin/NOTES.md</code> for
+  the three named forks (what IS the thread graph-wise; does reply-to-message need a real edge;
+  cross-ticket kinship). Try to break it.
+</div>
+
+<div class="controls">
+  <label><input type="checkbox" id="showSystemLines" checked> show system lines <span class="fork-note">(state changes — fork 1)</span></label>
+  <label><input type="checkbox" id="showReceipts" checked> show work receipts <span class="fork-note">(fork 1)</span></label>
+  <label><input type="checkbox" id="showBuckets" checked> show debug/bucket labels</label>
+</div>
+
+<div class="thread-wrap">
+  <div class="subject-header">
+    <div class="subject-line" id="subjectLine"></div>
+    <div class="meta-row" id="metaRow"></div>
+    <div class="steers mono">steers toward <b>The Ideal Learning Technology Support Experience</b>
+      <span class="fake">[fake star ref]</span></div>
+    <div class="kinship-note mono">
+      <span class="related-stub">[related threads (2)] <span class="fake">— unmodeled, fork 3</span></span>
+      same requester, two other tickets not shown here — kinship/LCA read, not staged.
+    </div>
+  </div>
+
+  <div id="threadBody"></div>
+
+  <div class="composer">
+    <div class="composer-label">Reply <span class="now-here">— Now lives at the bottom of a conversation</span>
+      <span class="fake">[does nothing yet]</span></div>
+    <div id="quoteRefSlot"></div>
+    <div class="compose-row">
+      <input type="text" class="compose-input" id="composeInput" placeholder="reply to this thread…">
+      <button type="button" class="compose-submit" id="composeSubmit">reply</button>
+    </div>
+  </div>
+</div>
+
+<footer class="notes mono">
+  seams left showing on purpose: banner, bucket labels, per-kind toggles, [does nothing yet] on
+  every write path (reply submit, AI triage confirm/re-ground, door-refusal), hardcoded fake
+  ticket, no backend. Message anatomy (sender/avatar/timestamp/body) is new to THIS muslin — it
+  does not port <code>pull-tab-anatomy-muslin.html</code>'s card tabs/drawers (that anatomy
+  answered a different question — a card's OWN future/past poles — not a cone's chronological
+  read). See NOTES.md for why that's a deliberate non-port, not an oversight.
+</footer>
+
+<script>
+/* ============================== FAKE DATA ==============================
+   One ticket's whole cone, staged as a flat chronological list of "messages."
+   kind: capture | comment | triage | sysline | receipt
+   laid_by: the frame that laid this event — requester, support staff, the
+   AI triage frame, or "door" (a system boundary refusing something).
+   quotes: optional index into this same array — the prehended-message id,
+   rendered as an indented quote block (quoting IS prehension made visible).
+*/
+const TICKET = {
+  id:'t1', subject:'Quiz 3 will not submit past 90%', requester:'frame-student-4417',
+  course:'gen-ed-101', status:'open', // open | done
+};
+
+const MESSAGES = [
+  { id:'m1', kind:'capture', laid_by:'frame-student-4417', when:'Jul 15, 10:02',
+    body:'Quiz 3 will not submit — I keep getting a spinner and then it just resets to the intro page. Chrome, Windows.' },
+  { id:'m2', kind:'sysline', laid_by:'door', when:'Jul 15, 10:03',
+    body:'gathered — ticket entered the support queue', tag:'gathered' },
+  { id:'m3', kind:'triage', laid_by:'frame-ai-triage', when:'Jul 15, 10:04',
+    body:'Guessing this grounds in <b>gen-ed-101</b>, category <b>grade-sync</b>, based on subject + course roster match.',
+    aiGuess:{ course:'gen-ed-101', category:'grade-sync', confirmed:null } },
+  { id:'m4', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 15, 10:14',
+    body:'Thanks — can you try a hard refresh and resend the timestamp of the last attempt?' },
+  { id:'m5', kind:'comment', laid_by:'frame-student-4417', when:'Jul 15, 10:20', quotes:'m4',
+    body:'Tried that, same thing. Attached a screen recording.' },
+  { id:'m6', kind:'sysline', laid_by:'door', when:'Jul 15, 11:02',
+    body:'migrated — reassigned from tier-1 queue to platform-eng', tag:'migrated' },
+  { id:'m7', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 15, 11:05', quotes:'m5',
+    body:'Escalating to platform-eng with your recording attached — they own the grade-sync retry queue.' },
+  { id:'m8', kind:'receipt', laid_by:'frame-work-event', when:'Jul 16, 09:40',
+    body:'work laid: <b>fix-quiz-import</b> — grounds in this ticket', workTag:'fix-quiz-import' },
+  { id:'m9', kind:'sysline', laid_by:'door', when:'Jul 16, 09:41',
+    body:'re-grounded — triage guess confirmed against fix-quiz-import\'s own course chip', tag:'re-grounded' },
+  { id:'m10', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 16, 09:50', quotes:'m8',
+    body:'Fix is in — the retry queue was silently dropping submits over 90% payload size. Can you try again?' },
+  { id:'m11', kind:'comment', laid_by:'frame-student-4417', when:'Jul 16, 10:15', quotes:'m10',
+    body:'Just tried it — submitted clean. Thank you!' },
+  { id:'m12', kind:'sysline', laid_by:'door', when:'Jul 16, 10:16',
+    body:'done — ticket closed', tag:'done' },
+];
+
+const S = {
+  showSystemLines: true, showReceipts: true, showBuckets: true,
+  stackOpen: false, // collapsed-older-messages stack, closed by default
+  quoteDraft: null, // message id the composer is quoting, or null
+  aiGuess: { confirmed: null },
+};
+const STACK_THRESHOLD = 4; // messages older than the last N stay collapsed until opened
+
+/* ============================ HEADER ============================ */
+function renderHeader() {
+  document.getElementById('subjectLine').textContent = TICKET.subject;
+  document.getElementById('metaRow').innerHTML =
+    `<span class="mono">${TICKET.requester}</span>` +
+    `<span class="course-chip">${TICKET.course}</span>` +
+    `<span class="status-chip ${TICKET.status === 'done' ? 'done' : ''}">${TICKET.status === 'done' ? 'done' : 'open'}</span>`;
+}
+
+/* ============================ MESSAGE FILTERING (fork 1) ============================
+   Fork 1, staged as a live toggle rather than resolved: is "the thread" the comment
+   chain only (capture + comment), or the FULLER cone (system-line state changes +
+   work receipts too)? Default here is the fuller read (both toggles ON) so Hallie can
+   feel it fully dressed first, then strip toward the narrower reading by unchecking. */
+function visibleMessages() {
+  return MESSAGES.filter(m => {
+    if (m.kind === 'sysline' && !S.showSystemLines) return false;
+    if (m.kind === 'receipt' && !S.showReceipts) return false;
+    return true;
+  });
+}
+
+/* ============================ QUOTE / PREHENSION RENDER ============================
+   Fork 2, staged as the visible default: a reply that `quotes` an earlier message id
+   renders an indented quote block sourced from that ORIGINAL message's body — i.e.
+   this muslin stages reply-quotes-a-specific-message (comment prehends comment) as a
+   real, named edge in the data (`quotes: 'm4'`), not merely "all replies prehend the
+   ticket." See NOTES.md fork 2 for the alternative shape (flatten to ticket-level only)
+   and why both are worth feeling before ruling. */
+function QuoteBlock(quotedId) {
+  const src = MESSAGES.find(m => m.id === quotedId);
+  if (!src) return '';
+  return `<div class="quote-block">
+    <div class="quote-attrib mono">${src.laid_by} · ${src.when}</div>
+    ${stripTags(src.body)}
+  </div>
+  <div class="prehend-note">${quotedId} — meaning is in the edges; quoting IS prehension made visible</div>`;
+}
+function stripTags(s) { return s.replace(/<[^>]+>/g, ''); }
+
+function avatarLetter(laid_by) {
+  if (laid_by === 'door') return '⌸';
+  if (laid_by === 'frame-ai-triage') return 'AI';
+  if (laid_by === 'frame-work-event') return '⚒';
+  return (laid_by.match(/frame-(\w)/) || [,'?'])[1].toUpperCase();
+}
+
+/* ============================ MESSAGE RENDER ============================ */
+function MessageBlock(m, idx) {
+  if (m.kind === 'sysline') {
+    return `<div class="sysline mono"><span class="sys-tag">${m.tag}</span> ${m.body}
+      ${S.showBuckets ? '<span class="bucket-label">[state change — quiet, non-message]</span>' : ''}</div>`;
+  }
+  const bodyExtra = [];
+  if (m.quotes) bodyExtra.push(QuoteBlock(m.quotes));
+  if (m.kind === 'receipt') {
+    bodyExtra.push(`<div class="receipt-block">${m.body}</div>`);
+  } else if (m.body) {
+    bodyExtra.unshift(`<div>${m.body}</div>`);
+  }
+  if (m.kind === 'triage') {
+    const g = m.aiGuess;
+    bodyExtra.push(`<div class="ai-stub-row">
+      <button type="button" class="confirm" data-ai-confirm="${m.id}">
+        [confirm]${g.confirmed === true ? ' ✓' : ''} <span class="fake">does nothing yet</span></button>
+      <button type="button" data-ai-reground="${m.id}">
+        [re-ground]${g.confirmed === false ? ' ✗ requested' : ''} <span class="fake">does nothing yet</span></button>
+    </div>`);
+  }
+  if (m.id === 'doorRefusalDemo') {
+    bodyExtra.push(`<div class="door-refusal mono">refused: cannot re-open a done ticket by replying to an old
+      message — reply lands on the THREAD's own Now, not this message's. <span class="fake">[does nothing yet — honest refusal, not a bug]</span></div>`);
+  }
+  const kindTag = { capture:'capture — original', comment:'comment', triage:'AI triage guess', receipt:'work receipt' }[m.kind];
+  return `<div class="msg kind-${m.kind}" data-msg="${m.id}">
+    <div class="msg-head" data-msg-toggle="${m.id}">
+      <div class="msg-avatar">${avatarLetter(m.laid_by)}</div>
+      <div class="msg-from mono">${m.laid_by}</div>
+      <span class="msg-kind-tag">${S.showBuckets ? kindTag : ''}</span>
+      <div class="msg-when mono">${m.when}</div>
+      <button type="button" class="reply-to-btn" data-reply-to="${m.id}" title="quote this message in your reply">reply-to</button>
+    </div>
+    <div class="msg-body">${bodyExtra.join('')}</div>
+  </div>`;
+}
+
+/* ============================ COLLAPSED STACK ============================
+   Email-style "N earlier messages" — collapses everything but the most recent
+   handful (by count of VISIBLE messages, so toggling system-lines/receipts on/off
+   doesn't strand the stack at a stale boundary). */
+function renderThread() {
+  const vis = visibleMessages();
+  let html = '';
+  if (vis.length > STACK_THRESHOLD && !S.stackOpen) {
+    const hidden = vis.slice(0, vis.length - STACK_THRESHOLD);
+    const shown = vis.slice(vis.length - STACK_THRESHOLD);
+    html += `<div class="collapsed-stack" id="stackToggle"><span>▸</span>
+      <span class="stack-count">${hidden.length}</span> earlier message${hidden.length === 1 ? '' : 's'} collapsed
+      <span class="fake">(click to expand)</span></div>`;
+    html += shown.map((m,i) => MessageBlock(m, i)).join('');
+  } else {
+    if (vis.length > STACK_THRESHOLD) {
+      html += `<div class="collapsed-stack" id="stackToggle"><span>▾</span> collapse earlier messages</div>`;
+    }
+    html += vis.map((m,i) => MessageBlock(m, i)).join('');
+  }
+  // one honest door-refusal reply, appended fixed at the end for verification
+  html += MessageBlock({ id:'doorRefusalDemo', kind:'comment', laid_by:'door', when:'—',
+    body:'' }, vis.length);
+  document.getElementById('threadBody').innerHTML = html;
+}
+
+function renderQuoteRef() {
+  const slot = document.getElementById('quoteRefSlot');
+  if (!S.quoteDraft) { slot.innerHTML = ''; return; }
+  const src = MESSAGES.find(m => m.id === S.quoteDraft);
+  slot.innerHTML = `<div class="quote-ref mono">quoting ${src ? src.laid_by + ' · ' + src.when : S.quoteDraft}
+    <button type="button" id="clearQuote">clear</button></div>`;
+}
+
+function renderAll() { renderHeader(); renderThread(); renderQuoteRef(); }
+
+/* ============================== EVENTS ============================== */
+document.getElementById('threadBody').addEventListener('click', e => {
+  const stackToggle = e.target.closest('#stackToggle');
+  const replyTo = e.target.closest('[data-reply-to]');
+  const aiConfirm = e.target.closest('[data-ai-confirm]');
+  const aiReground = e.target.closest('[data-ai-reground]');
+  if (stackToggle) { S.stackOpen = !S.stackOpen; renderThread(); return; }
+  if (replyTo) {
+    S.quoteDraft = replyTo.dataset.replyTo;
+    renderQuoteRef();
+    document.getElementById('composeInput').focus();
+    return;
+  }
+  if (aiConfirm) {
+    const m = MESSAGES.find(x => x.id === aiConfirm.dataset.aiConfirm);
+    if (m && m.aiGuess) { m.aiGuess.confirmed = m.aiGuess.confirmed === true ? null : true; }
+    console.log('[muslin] AI triage confirm toggled [does nothing yet]', m && m.aiGuess);
+    renderThread();
+    return;
+  }
+  if (aiReground) {
+    const m = MESSAGES.find(x => x.id === aiReground.dataset.aiReground);
+    if (m && m.aiGuess) { m.aiGuess.confirmed = m.aiGuess.confirmed === false ? null : false; }
+    console.log('[muslin] AI triage re-ground requested [does nothing yet]', m && m.aiGuess);
+    renderThread();
+    return;
+  }
+});
+
+document.getElementById('quoteRefSlot').addEventListener('click', e => {
+  if (e.target.id === 'clearQuote') { S.quoteDraft = null; renderQuoteRef(); }
+});
+
+document.getElementById('composeSubmit').addEventListener('click', () => {
+  const input = document.getElementById('composeInput');
+  const val = (input.value || '').trim();
+  if (!val) return;
+  const newMsg = { id:'m' + (MESSAGES.length + 1), kind:'comment', laid_by:'frame-support-you',
+    when:'now', body: val };
+  if (S.quoteDraft) newMsg.quotes = S.quoteDraft;
+  MESSAGES.splice(MESSAGES.length, 0, newMsg);
+  console.log('[muslin] reply appended [does nothing yet — in-memory only]', newMsg);
+  input.value = '';
+  S.quoteDraft = null;
+  renderThread();
+  renderQuoteRef();
+});
+document.getElementById('composeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('composeSubmit').click();
+});
+
+document.getElementById('showSystemLines').addEventListener('change', e => { S.showSystemLines = e.target.checked; renderThread(); });
+document.getElementById('showReceipts').addEventListener('change', e => { S.showReceipts = e.target.checked; renderThread(); });
+document.getElementById('showBuckets').addEventListener('change', e => { S.showBuckets = e.target.checked; renderThread(); });
+
+renderAll();
+</script>
+</body>
+</html>
