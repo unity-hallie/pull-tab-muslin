@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MUSLIN: Celtic Cross View</title>
+<style>
+  :root {
+    --ground:#1b1620; --card-back:#2e2440; --card-face:#f4ecd8; --ink:#2a2318;
+    --gold:#c9a227; --lure:#8a6d1a; --amber:#b5691f; --star:#4a5d23;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--ground); color:#e9e2d4;
+    font-family: Georgia, "Iowan Old Style", serif;
+    padding: 0 0 4rem;
+  }
+  .muslin-banner {
+    background: repeating-linear-gradient(45deg,#3a2b52,#3a2b52 12px,#2e2440 12px,#2e2440 24px);
+    border-bottom: 3px dashed var(--gold);
+    padding: .9rem 1.2rem;
+    font-family: "SF Mono", Menlo, monospace;
+    font-size: .82rem;
+    color: #f0d98a;
+  }
+  .muslin-banner b { color: #fff; }
+  header.spread-head {
+    max-width: 62rem; margin: 1.6rem auto 0; padding: 0 1.5rem;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 .2rem; letter-spacing: .02em; }
+  .sub { color:#b7a9d1; font-style: italic; max-width: 62ch; font-size: .95rem; }
+  .thesis {
+    margin-top: .9rem; padding: .7rem 1rem; background: rgba(201,162,39,.08);
+    border-left: 3px solid var(--gold); max-width: 62ch; font-size: .88rem; color:#e2d6b8;
+  }
+
+  .querent-bar {
+    max-width: 62rem; margin: 1.2rem auto 0; padding: 0 1.5rem;
+    display:flex; align-items:center; gap: 1rem; flex-wrap: wrap;
+  }
+  .querent-bar .question {
+    font-size: 1.05rem; color:#fff;
+  }
+  .querent-bar .question em { color: #f0d98a; font-style: normal; font-weight: bold; }
+  button.draw-again {
+    font-family: inherit; font-size: .85rem; padding: .45rem .9rem;
+    background: var(--gold); color:#2a2318; border: none; border-radius: 3px;
+    cursor: pointer; font-weight: bold; letter-spacing: .02em;
+  }
+  button.draw-again:hover { background: #e2bd4a; }
+  button.draw-again:active { transform: translateY(1px); }
+
+  .stage {
+    max-width: 62rem; margin: 2.2rem auto 0; padding: 0 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, auto);
+    gap: 1.1rem;
+    position: relative;
+  }
+  /* Celtic cross geometry, mapped onto a 4x4 grid:
+     row1: [ . ][ crown(5) ][ . ][ self(7) ]
+     row2: [ recent-past(4) ][ present(1)+crossing(2) ][ near-future(6) ][ environment(8) ]
+     row3: [ . ][ foundation(3) ][ . ][ hopes-fears(9) ]
+     row4: [ . ][ . ][ . ][ outcome(10) ]
+  */
+  .pos { position: relative; }
+  .p-crown        { grid-column: 2; grid-row: 1; }
+  .p-recent-past  { grid-column: 1; grid-row: 2; }
+  .p-center       { grid-column: 2; grid-row: 2; position: relative; height: 100%; }
+  .p-near-future  { grid-column: 3; grid-row: 2; }
+  .p-foundation   { grid-column: 2; grid-row: 3; }
+  .p-self         { grid-column: 4; grid-row: 1; }
+  .p-environment  { grid-column: 4; grid-row: 2; }
+  .p-hopes-fears  { grid-column: 4; grid-row: 3; }
+  .p-outcome      { grid-column: 4; grid-row: 4; }
+
+  .card {
+    perspective: 900px;
+    height: 170px;
+    cursor: pointer;
+  }
+  .card-inner {
+    position: relative; width: 100%; height: 100%;
+    transition: transform .5s cubic-bezier(.4,.2,.2,1);
+    transform-style: preserve-3d;
+  }
+  .card.flipped .card-inner { transform: rotateY(180deg); }
+  .card-face, .card-back {
+    position: absolute; inset: 0;
+    -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    border-radius: 8px;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .card-back {
+    background: repeating-linear-gradient(135deg, var(--card-back), var(--card-back) 8px, #241a38 8px, #241a38 16px);
+    border: 2px solid var(--gold);
+    align-items: center; justify-content: center;
+    font-size: .78rem; color: #d8c98a; letter-spacing: .08em; text-align: center;
+    padding: .5rem;
+  }
+  .card-back .glyph { font-size: 1.6rem; margin-bottom: .3rem; }
+  .card-face {
+    background: var(--card-face); color: var(--ink);
+    transform: rotateY(180deg);
+    border: 2px solid var(--lure);
+    padding: .55rem .65rem .4rem;
+  }
+  .card-face .tarot-name {
+    font-weight: bold; font-size: .85rem; text-align:center;
+    border-bottom: 1px solid #cbb98f; padding-bottom: .25rem; margin-bottom: .3rem;
+  }
+  .card-face .read-label {
+    font-family: "SF Mono", Menlo, monospace; font-size: .58rem; color: var(--lure);
+    text-align: center; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .35rem;
+  }
+  .card-face .content {
+    font-size: .74rem; line-height: 1.32; flex: 1; overflow: auto;
+  }
+  .card-face .content .event-name { font-weight: bold; }
+  .card-face .content .quality-tag {
+    display: inline-block; font-family: monospace; font-size: .62rem;
+    background: #e6dcc0; color: var(--amber); padding: 0 .3rem; border-radius: 2px;
+    margin-left: .2rem;
+  }
+  .card-face.empty {
+    background: #efe6e6; border-color: #b56d6d;
+  }
+  .card-face.empty .content { color: #8a4a4a; font-style: italic; }
+  .card-face.outcome-open {
+    background: #e9e6f4; border-color: #6a5b9e;
+  }
+
+  .pos-caption {
+    margin-top: .35rem; font-size: .72rem; color: #b7a9d1; text-align: center;
+    line-height: 1.3;
+  }
+  .pos-caption .num { color: var(--gold); font-weight: bold; }
+
+  .p-center .card { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 62%; height: 170px; z-index: 1; }
+  .p-center .p-present-wrap { position: relative; }
+  .p-center .p-crossing-wrap {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%) rotate(90deg);
+    width: 62%; height: 170px; z-index: 2;
+  }
+  .p-center { min-height: 260px; }
+
+  footer.legend {
+    max-width: 62rem; margin: 2.4rem auto 0; padding: 1rem 1.5rem;
+    background: rgba(255,255,255,.03); border-top: 1px dashed var(--gold);
+    font-size: .78rem; color: #b7a9d1;
+  }
+  footer.legend table { border-collapse: collapse; width: 100%; margin-top:.6rem; }
+  footer.legend td, footer.legend th { padding: .3rem .5rem; border-bottom: 1px solid rgba(255,255,255,.08); text-align: left; vertical-align: top; }
+  footer.legend th { color: #f0d98a; font-weight: normal; text-transform: uppercase; font-size: .68rem; letter-spacing: .04em; }
+
+  .seam-note {
+    max-width: 62rem; margin: 1.5rem auto 0; padding: 0 1.5rem;
+    font-size: .82rem; color: #8a7ba8; font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="muslin-banner">
+  🧵 MUSLIN — SEAMS SHOWING — <b>every card's small print is the real answer</b>;
+  the tarot dress is a costume over a completeness audit. Fake data (one event + its cone),
+  cheap cotton, click to flip, [draw again] swaps the whole cone. Not a real feature.
+</div>
+
+<header class="spread-head">
+  <h1>The Celtic Cross View</h1>
+  <p class="sub">Pick an event. The ten positions populate from its cone by REAL reads —
+    not fortune, not vibes. This is the house's own epistemology (every render is a frame;
+    a reading is a reading) wearing divination dress.</p>
+  <p class="thesis">The deep joke, stated plainly: this is the only tarot deck where the
+    reading is <b>deterministic and auditable</b> — draw the same event twice, get the same
+    ten cards, because the cards ARE the graph read, not a shuffle. And the Outcome card is
+    the one honest tarot card ever printed: for an open story, it says <em>the cards decline
+    to say</em> — because the End-pole hasn't closed yet, and Whitehead does divination
+    better than divination.</p>
+</header>
+
+<div class="querent-bar">
+  <div class="question">The querent asks: <em id="querent-q">"What of <span id="event-name-inline">the drawer-mount fix</span>?"</em></div>
+  <button class="draw-again" onclick="drawAgain()">🔀 draw again (new event)</button>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<footer class="legend">
+  <strong style="color:#f0d98a">The ten-position mapping</strong> — what each card's small
+  print actually reads off the graph. This table is also printed in miniature on every card
+  (seams showing on purpose): the point of the spread is that the mapping stays visible, not
+  hidden behind mystery.
+  <table id="legend-table"></table>
+</footer>
+
+<p class="seam-note">Tear this apart. See NOTES.md alongside this file for the audit finding,
+  what breaks, and the joke stated at full length.</p>
+
+<script>
+// ---------------------------------------------------------------------------
+// FAKE DATA — one event with a full cone, real vocabulary (society.ts terms),
+// fabricated content. Two events so [draw again] has somewhere to go.
+// ---------------------------------------------------------------------------
+const EVENTS = {
+  "drawer-mount": {
+    name: "drawer-mount fix",
+    kind: "story",
+    face: "Two-drawer mount landed after the lazy-load bulkhead fix — the story's own face, unglamorous, present-tense.",
+    blockedBy: { present: true, slug: "keyboard-nav-race", text: "q-blocked-by: keyboard focus and mouse activation both write applyActivation() with no handoff protocol — null.split() crash on third keystroke." },
+    foundationRoot: { present: true, text: "because-chain root: 'a drawer's rest-state must never be silent about how much is inside' — the count-hint law this whole muslin arc stands on." },
+    recentPast: { present: true, text: "latest gathered member: 'pin promotes a drawer into the page's layout' commit — position:absolute → position:static, DOM order already correct." },
+    crown: { present: true, text: "the sublime it charges toward: 'a card reads as what-it-is and what-it-weighs at a glance' — the recess-cards convergence, never actual, only ever charged toward." },
+    nearFuture: { present: true, text: "nearest scripted prehender: reconciliation-muslin's rail-vs-spine consensus, not yet actualized." },
+    self: { present: true, text: "laid_by frame: frame-claude-society-index-port — the crew that owns scher/src/society.ts this round." },
+    environment: { present: true, text: "containing event: 2026-07-16 sprint, 'Render redesign arc' — T1–T4 fences awaiting Hallie." },
+    hopesFears: {
+      hope: "charges outward: 'drawer and section share one render path, no separate component' — the reuse the drawer-voice asked for.",
+      fear: "unmet: keyboard nav still bolts on after the fact — the crash risk named in ADVOCACY.md, never closed."
+    },
+    outcome: { open: true, text: "End-pole not yet actual. The cards decline to say — this story has no closing edge yet. That is the TRUE reading." }
+  },
+  "index-port": {
+    name: "society index port",
+    kind: "story",
+    face: "Claim scher/src/society.ts for the by_subject/by_object index port — the story's face, mid-flight.",
+    blockedBy: { present: true, slug: "canon-size-diagnosis", text: "q-blocked-by: performance diagnosis correction — the index already exists; canon size was overstated. Blocker turned out to be a wrong premise, not a missing feature." },
+    foundationRoot: { present: true, text: "because-chain root: 'files get a voice — one agent, one file' — the claims.json discipline this port had to respect before touching anything." },
+    recentPast: { present: true, text: "latest gathered member: cardview.ts contains-cycle stack-overflow fix, immediately prior in the same session." },
+    crown: { present: true, text: "sublime charged toward: a society index fast enough that no view needs its own bespoke cache — never actual, always the horizon." },
+    nearFuture: { present: false, text: "no scripted prehender yet laid — nothing downstream has claimed to consume the finished index." },
+    self: { present: true, text: "laid_by frame: frame-claude-society-index-port." },
+    environment: { present: true, text: "containing event: the 2026-07-15 graph-read performance diagnosis committee." },
+    hopesFears: {
+      hope: "charges outward: every view (kanban, day, thread) reads the same index — one source of truth for by_subject/by_object.",
+      fear: "unmet: the deep-think architecture docs (bulkhead + lazy-load) haven't been reconciled with this port yet — two designs, one file, no consensus commit."
+    },
+    outcome: { open: true, text: "End-pole not yet actual. The cards decline to say." }
+  }
+};
+
+let currentKey = "drawer-mount";
+
+function h(str) { return String(str); }
+
+function positionSpec(ev) {
+  return [
+    { id:"present", cls:"p-present-wrap", tarot:"I. The Present", read:"the event itself", num:1,
+      body: `<span class="event-name">${h(ev.name)}</span><span class="quality-tag">${h(ev.kind)}</span><br>${h(ev.face)}`,
+      empty: false },
+
+    { id:"crossing", cls:"p-crossing-wrap", tarot:"II. The Crossing", read:"q-blocked-by · most-charged unmet requirement", num:2,
+      body: ev.blockedBy.present ? ev.blockedBy.text : "No q-blocked-by edge and no unmet requirement outweighs the rest — nothing crosses this event right now.",
+      empty: !ev.blockedBy.present },
+
+    { id:"foundation", cls:"p-foundation", tarot:"III. The Foundation", read:"because-chain root (deepest ground)", num:3,
+      body: ev.foundationRoot.present ? ev.foundationRoot.text : "No because-chain traced — this event grounds nothing further down.",
+      empty: !ev.foundationRoot.present },
+
+    { id:"recent-past", cls:"p-recent-past", tarot:"IV. Recent Past", read:"latest gathered member", num:4,
+      body: ev.recentPast.present ? ev.recentPast.text : "This event has gathered nothing yet — no member behind it.",
+      empty: !ev.recentPast.present },
+
+    { id:"crown", cls:"p-crown", tarot:"V. The Crown", read:"the sublime it charges toward", num:5,
+      body: ev.crown.present ? ev.crown.text : "No sublime-pole charge laid from this event — it charges toward nothing named.",
+      empty: !ev.crown.present, star:true },
+
+    { id:"near-future", cls:"p-near-future", tarot:"VI. Near Future", read:"nearest scripted/future prehender", num:6,
+      body: ev.nearFuture.present ? ev.nearFuture.text : "Nothing downstream has prehended this event yet — no scripted future beat.",
+      empty: !ev.nearFuture.present },
+
+    { id:"self", cls:"p-self", tarot:"VII. The Self", read:"laid_by frame's face", num:7,
+      body: ev.self.present ? ev.self.text : "No laid_by frame recorded — an orphan beat, unclaimed.",
+      empty: !ev.self.present },
+
+    { id:"environment", cls:"p-environment", tarot:"VIII. Environment", read:"containing event (day/sprint)", num:8,
+      body: ev.environment.present ? ev.environment.text : "No containing event — floats outside any day or sprint.",
+      empty: !ev.environment.present },
+
+    { id:"hopes-fears", cls:"p-hopes-fears", tarot:"IX. Hopes & Fears", read:"charges outward vs. unmet", num:9,
+      body: `<u>hope</u> — ${h(ev.hopesFears.hope)}<br><br><u>fear</u> — ${h(ev.hopesFears.fear)}`,
+      empty: false },
+
+    { id:"outcome", cls:"p-outcome", tarot:"X. Outcome", read:"End-pole, honestly rendered", num:10,
+      body: ev.outcome.open ? `<b>OPEN.</b> ${ev.outcome.text}` : (ev.outcome.text || "closed"),
+      empty: false, outcomeOpen: ev.outcome.open }
+  ];
+}
+
+function render() {
+  const ev = EVENTS[currentKey];
+  document.getElementById("event-name-inline").textContent = ev.name;
+  const stage = document.getElementById("stage");
+  stage.innerHTML = "";
+  const specs = positionSpec(ev);
+
+  specs.forEach(spec => {
+    const wrap = document.createElement("div");
+    wrap.className = "pos " + spec.cls;
+
+    const cardHtml = `
+      <div class="card" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-back">
+            <div class="glyph">${spec.star ? "★" : "✦"}</div>
+            ${spec.num}. ${spec.tarot.split(". ")[1] || spec.tarot}
+          </div>
+          <div class="card-face ${spec.empty ? "empty" : ""} ${spec.outcomeOpen ? "outcome-open" : ""}">
+            <div class="tarot-name">${spec.tarot}</div>
+            <div class="read-label">${spec.read}</div>
+            <div class="content">${spec.body}</div>
+          </div>
+        </div>
+      </div>
+      <div class="pos-caption"><span class="num">${spec.num}</span> · ${spec.tarot} = ${spec.read}</div>
+    `;
+
+    if (spec.id === "present" || spec.id === "crossing") {
+      wrap.innerHTML = cardHtml;
+    } else {
+      wrap.innerHTML = cardHtml;
+    }
+    stage.appendChild(wrap);
+  });
+
+  renderLegend(specs);
+}
+
+function renderLegend(specs) {
+  const t = document.getElementById("legend-table");
+  let rows = "<tr><th>#</th><th>Tarot name</th><th>Graph read</th><th>Empty means…</th></tr>";
+  const emptiness = {
+    1: "the event has no face text at all — should never happen; a diagnostic of a broken mint.",
+    2: "nothing blocks this event and no requirement is unmet — genuinely clear, or blockedBy was never checked.",
+    3: "no because-chain traced back — this event is its own ground, or the chain was never laid.",
+    4: "nothing gathered yet — a fresh event with no history.",
+    5: "no sublime charge laid — this event doesn't reach toward anything named; missing ambition, or an un-instrumented story.",
+    6: "no scripted prehender downstream — nothing has claimed to come after this yet.",
+    7: "no laid_by — an orphan beat with no frame accountable for it. Should be rare; is a real bug when it appears.",
+    8: "no containing event — floats outside any day/sprint; often means it was never filed.",
+    9: "always fills (hope/fear are always askable) — but a story with no charges outward AND no unmet requirement is suspiciously frictionless.",
+    10: "never empty — OPEN is itself the honest content for anything not yet closed. This is the one position where 'empty' IS the answer."
+  };
+  specs.forEach(s => {
+    rows += `<tr><td>${s.num}</td><td>${s.tarot}</td><td>${s.read}</td><td>${emptiness[s.num]}</td></tr>`;
+  });
+  t.innerHTML = rows;
+}
+
+function drawAgain() {
+  currentKey = currentKey === "drawer-mount" ? "index-port" : "drawer-mount";
+  render();
+}
+
+render();
+</script>
+
+</body>
+</html>
