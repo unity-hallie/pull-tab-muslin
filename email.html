@@ -1,0 +1,506 @@
+<!-- MUSLIN — NOT REAL. Built 2026-07-17 to test the master-detail EMAIL-CLIENT-STYLE
+     projection for next sprint's TICKET HANDLING (docs/committees/BRIEF-sprint-ticket-
+     handling.md). Hallie's seed verbatim: "an email client esque view where the list of
+     the story is on the right, and highlighting a todo card makes its card view pop up
+     on the right." Her own sentence puts list AND detail both "on the right" — read as
+     a slip; this muslin STAGES list-LEFT / detail-RIGHT (the email-client convention)
+     but the panes are built as two swappable slots (#pane-list / #pane-detail sit in a
+     CSS grid whose column order is one class toggle) specifically so a one-click flip
+     tests the alternative without touching a line of logic. See NOTES.md fork 1.
+
+     THE FRACTAL-LAW CLAIM THIS MUSLIN EXISTS TO PROVE: the right pane is NOT a new
+     card view. It is the SAME card anatomy ruled complete in
+     docs/muslins/pull-tab-muslin/NOTES.md (120px file-folder tabs, two-zone poles,
+     Future→Present→NOW→Past, drop-opens-pinned) — ported here as a trimmed single-card
+     render, mounted into a new SHELL (a detail pane instead of a list row). No new card
+     code, only a new layout shell around old card code. Where this muslin diverges from
+     the pull-tab muslin's full five-question rig (drag-drop, filter-inheritance stub,
+     hover-vs-click drop regions) that's on purpose — those questions are ALREADY RULED
+     and out of scope here; this muslin's only new question is the master-detail SHELL
+     and the ticket-list idiom, not the card interior again.
+
+     Cheap cotton, seams showing: hardcoded fake tickets, [does nothing yet] everywhere
+     it would touch a backend, system fonts, a banner, debug labels left in. Built
+     against api/static/muslins/pull-tab-anatomy-muslin.html's idiom (see
+     docs/muslins/pull-tab-muslin/NOTES.md) — same palette, same "no HTML5 DnD" house
+     law reused where drag exists at all (it mostly doesn't here — j/k nav instead). -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>[MUSLIN] email-style ticket projection</title>
+<style>
+  body { font-family: 'Hanken Grotesk', Arial, sans-serif; background:#faf8f3; color:#23291f; margin:0; padding:1.4rem; }
+  h1 { font-family: Georgia, 'Source Serif 4', serif; font-size:1.4rem; margin:0 0 .3rem; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .fake { color:#aaa; font-size:.7em; font-family: ui-monospace, monospace; }
+  .banner { background: repeating-linear-gradient(45deg,#ffe08a,#ffe08a 12px,#fff3c4 12px,#fff3c4 24px);
+    border: 2px dashed #b08900; padding: .6rem 1rem; margin-bottom: 1rem; font-weight: bold; font-size:.82rem; line-height:1.5; }
+  .controls { display:flex; gap:1.2rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem;
+    padding:.6rem .9rem; background:#fff; border:1.5px dashed #999; font-size:.76rem; }
+  .controls label { display:flex; align-items:center; gap:.35rem; cursor:pointer; }
+  .fork-note { font-size:.68rem; color:#8a6d12; }
+
+  /* ===== QUEUE HEADER — which star this queue steers toward (BRIEF's courses-as-
+     ground addendum: staged here as a generic "queue" concept, see NOTES.md fork 2 on
+     what a queue actually IS — story? course? charge-target?) ===== */
+  .queue-header { max-width:1360px; margin:0 auto 1rem; padding:.6rem 1rem; background:#fff;
+    border:2px solid #23291f; display:flex; align-items:center; gap:.7rem; box-shadow:3px 3px 0 #23291f18; }
+  .queue-header .star { font-size:1.1rem; }
+  .queue-header .steers { font-size:.78rem; color:#6b6f66; }
+  .queue-header .steers b { color:#23291f; }
+  .queue-header .bucket-label { margin-left:auto; }
+
+  /* ===== SWAPPABLE MASTER-DETAIL SHELL =====
+     Grid, not flex, specifically so "which pane is on the left" is ONE class flip
+     (.panes swaps grid-template-columns order) rather than a DOM reorder — the panes
+     ARE swappable, per Hallie's ask to stage list-left/detail-right pending her confirm
+     but make the swap trivial to test. #pane-list and #pane-detail never move in the
+     DOM; only the grid-column assignment flips. */
+  .panes { max-width:1360px; margin:0 auto; display:grid; grid-template-columns: 380px 1fr; gap:1.1rem; align-items:start; }
+  .panes.flipped { grid-template-columns: 1fr 380px; }
+  .panes.flipped #pane-list { grid-column: 2; }
+  .panes.flipped #pane-detail { grid-column: 1; }
+
+  #pane-list { background:#fff; border:2px solid #23291f; box-shadow:3px 3px 0 #23291f18;
+    max-height:78vh; overflow-y:auto; }
+  .list-head { padding:.5rem .8rem; border-bottom:1.5px dashed #ccc4b3; font-family:ui-monospace,monospace;
+    font-size:.66rem; text-transform:uppercase; letter-spacing:.05em; color:#6b6f66; display:flex; justify-content:space-between; }
+
+  /* ===== email-style ticket row ===== */
+  .trow { display:flex; flex-direction:column; gap:.15rem; padding:.55rem .8rem; border-bottom:1px solid #eee;
+    cursor:pointer; position:relative; }
+  .trow:hover { background:#fbf7e8; }
+  .trow.selected { background:#fff3c4; border-left:4px solid #b08900; padding-left:calc(.8rem - 4px); }
+  .trow .line1 { display:flex; align-items:baseline; gap:.5rem; }
+  .trow .sender { font-weight:700; font-size:.82rem; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .trow.unread .sender, .trow.unread .subject { font-weight:800; }
+  .trow .weight-dot { width:8px; height:8px; border-radius:50%; background:#2c5da0; flex:none; }
+  .trow:not(.unread) .weight-dot { visibility:hidden; }
+  .trow .subject { font-size:.86rem; }
+  .trow.done .subject { text-decoration: line-through; color:#8a9080; }
+  .trow .snippet { font-size:.72rem; color:#8a8f82; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .trow .chips { display:flex; gap:.35rem; margin-top:.2rem; flex-wrap:wrap; }
+  .course-chip { font-size:.6rem; font-family:ui-monospace,monospace; border:1px solid #4a7ec2; color:#2c5da0;
+    background:#eaf1fb; padding:.05rem .4rem; border-radius:10px; }
+  .ai-chip { font-size:.6rem; font-family:ui-monospace,monospace; border:1px dashed #b08900; color:#8a6508;
+    background:#fff7d6; padding:.05rem .4rem; border-radius:10px; cursor:pointer; }
+  .ai-chip:hover { background:#ffe9a1; }
+  .source-chip { font-size:.58rem; font-family:ui-monospace,monospace; border:1px dotted #999; color:#888;
+    padding:.05rem .35rem; border-radius:8px; }
+
+  /* ===== detail pane — the FULL CARD ANATOMY reused as the detail. Same class
+     names/behaviors as pull-tab-anatomy-muslin.html's card (tabs, two-zone poles,
+     interior, Now line) — see NOTES.md for exactly what was ported vs trimmed. ===== */
+  #pane-detail { min-height:78vh; }
+  .detail-empty { background:#fff; border:2px dashed #ccc4b3; padding:3rem 1.5rem; text-align:center;
+    color:#8a8f82; font-size:.85rem; }
+  .detail-card-slot { position:relative; margin:1.8rem 0 3rem; display:flex; flex-direction:column; }
+  .card { background:#fff; border:2px solid #23291f; box-shadow:3px 3px 0 #23291f18; position:relative; z-index:2; }
+  .card .face { display:flex; align-items:center; gap:.6rem; padding:.8rem 1rem; }
+  .face .requester { font-size:.72rem; color:#6b6f66; }
+  .face .label { flex:1; font-size:1.05rem; font-weight:600; }
+  .ticket-meta-row { display:flex; gap:.5rem; padding:0 1rem .6rem; flex-wrap:wrap; }
+
+  .tab-hitzone { position:absolute; height:26px; z-index:6; display:flex; align-items:flex-start; cursor:pointer; }
+  .tab-paint { width:100%; height:100%; border-radius:8px 8px 0 0; border:2px solid #23291f; border-bottom:none;
+    display:flex; align-items:center; justify-content:center; font-size:.62rem; font-weight:700;
+    box-shadow:0 -2px 4px #0002; }
+  .tab-hitzone.tl { top:-24px; left:18px; width:120px; }
+  .tab-hitzone.br { bottom:-24px; right:18px; width:120px; }
+  .tab-hitzone.br .tab-paint { border-radius:0 0 8px 8px; border-top:none; border-bottom:2px solid #23291f; box-shadow:0 2px 4px #0002; }
+  .tab-hitzone.future .tab-paint { background:#dce8f7; border-color:#6d94c4; color:#2c5da0; }
+  .tab-hitzone.past .tab-paint { background:#f7ecd0; border-color:#c49a3c; color:#8a6508; }
+  .tab-hitzone:hover .tab-paint { transform:translateY(-2px); }
+
+  .drawer { z-index:1; max-height:0; overflow:hidden; transition:max-height .18s ease-out;
+    display:flex; flex-direction:column-reverse; }
+  .drawer.future { margin-bottom:-2px; background:#f0f5fb; border-radius:8px 8px 0 0; }
+  .drawer.past { margin-top:-2px; background:#f7edd9; border-radius:0 0 8px 8px; }
+  .drawer.open { max-height:300px; border-left:2px solid #23291f; border-right:2px solid #23291f; }
+  .drawer.future.open { border-bottom:2px solid #23291f; }
+  .drawer.past.open { border-top:2px solid #23291f; }
+  .drawer-inner { padding:1.9rem 1.4rem .6rem; }
+  .drawer.past .drawer-inner { padding:.6rem 1.4rem 1.9rem; }
+  .drawer-label { font-size:.6rem; text-transform:uppercase; letter-spacing:.05em; font-family:ui-monospace,monospace; margin-bottom:.35rem; }
+  .drawer.future .drawer-label { color:#4a7ec2; }
+  .drawer.past .drawer-label { color:#c2723a; }
+  .drawer-item { display:flex; align-items:center; gap:.5rem; padding:.3rem .5rem; background:#fff;
+    border:1px solid currentColor; border-radius:4px; font-size:.8rem; margin-bottom:.3rem; }
+  .tag { font-size:.68rem; border:1px solid currentColor; padding:0 .3em; border-radius:3px; }
+
+  .expand-tab { position:absolute; left:50%; transform:translateX(-50%); bottom:-11px; z-index:7;
+    width:46px; height:16px; border-radius:0 0 8px 8px; border:2px solid #23291f; border-top:none;
+    background:#eee; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    font-size:.65rem; box-shadow:0 2px 4px #0002; }
+  .expand-tab:hover { background:#fff7a1; }
+
+  .interior { max-height:0; overflow:hidden; transition:max-height .2s ease-out; border-top:0 solid #23291f; }
+  .interior.open { max-height:900px; border-top-width:3px; }
+  .interior-inner { padding:.8rem 1rem 1rem; }
+  .isection { border:1px dashed #ccc4b3; border-radius:6px; margin-bottom:.5rem; }
+  .isection-header { display:flex; align-items:center; gap:.5rem; padding:.3rem .6rem;
+    font-family:ui-monospace,monospace; font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; }
+  .isection.future-section .isection-header { color:#4a7ec2; }
+  .isection.past-section .isection-header { color:#c2723a; }
+  .isection-body { padding:0 .6rem .5rem; }
+  .isection-label { font-family:ui-monospace,monospace; font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; margin:.6rem 0 .4rem; }
+  .irow { display:flex; align-items:center; gap:.55rem; padding:.35rem .6rem; border:1px solid #e4ddd2; border-radius:4px;
+    background:#fff; font-size:.85rem; margin-bottom:.35rem; }
+  .irow.struck { text-decoration:line-through; color:#8a9080; }
+  .now-line { margin:.5rem 0; padding:.35rem .6rem; background:#f1efe8; border-top:3px solid #23291f;
+    border-bottom:2px solid #23291f; font-family:ui-monospace,monospace; font-size:.65rem; font-weight:700;
+    letter-spacing:.1em; }
+
+  /* ===== comment thread — the reply composer's Now is the BOTTOM (Hallie's law:
+     "compose at the Now, each view's geometry decides where the Now lives" — a
+     conversation's Now is its most recent turn, which sits at the bottom of a thread,
+     unlike a TODO interior's Now which sits mid-card). See NOTES.md for the citation. ===== */
+  .thread { border-top:2px dashed #23291f; padding:.8rem 1rem; background:#fbfaf5; }
+  .thread-label { font-family:ui-monospace,monospace; font-size:.6rem; text-transform:uppercase;
+    letter-spacing:.05em; color:#8a6d12; margin-bottom:.5rem; }
+  .thread-msg { display:flex; gap:.6rem; margin-bottom:.55rem; font-size:.82rem; }
+  .thread-msg .who { font-weight:700; min-width:96px; flex:none; font-size:.76rem; }
+  .thread-msg .when { font-size:.66rem; color:#aaa; margin-left:.4rem; }
+  .thread-compose-row { display:flex; gap:.4rem; margin-top:.5rem; }
+  .thread-compose { flex:1; font-size:.85rem; padding:.4rem .6rem; border:1.5px solid #23291f; border-radius:4px; }
+  .thread-submit { font-size:.8rem; padding:.4rem .8rem; border:1.5px solid #23291f; border-radius:4px;
+    background:#f1efe8; cursor:pointer; font-weight:600; }
+  .thread-submit:hover { background:#ffe08a; }
+  .now-here { font-size:.58rem; font-family:ui-monospace,monospace; color:#b08900; margin-left:.4rem; }
+
+  .bucket-label { display:inline-block; font-size:.52rem; font-family:ui-monospace,monospace; letter-spacing:.03em;
+    color:#c0392b; background:#fff; padding:0 .3em; border:1px dashed #c0392b; border-radius:3px; opacity:.85;
+    margin-left:.5rem; vertical-align:middle; }
+
+  footer.notes { max-width:1360px; margin:1.4rem auto; font-size:.76rem; opacity:.75; line-height:1.5; }
+  code { background:#eee; padding:0 .25em; border-radius:3px; }
+  kbd { font-family:ui-monospace,monospace; background:#eee; border:1px solid #ccc; border-bottom-width:2px;
+    border-radius:3px; padding:0 .35em; font-size:.75em; }
+</style>
+</head>
+<body>
+
+<div class="banner mono">MUSLIN / NOT REAL — email-style projection over ticket handling. Testing the
+  MASTER-DETAIL SHELL for next sprint's TICKET HANDLING
+  (docs/committees/BRIEF-sprint-ticket-handling.md), against Hallie's seed: "an email
+  client esque view where the list of the story is on the right, and highlighting a
+  todo card makes its card view pop up on the right." Her sentence puts BOTH panes "on
+  the right" — read as a slip. Staged here: list-LEFT / detail-RIGHT (email convention),
+  panes built to be trivially SWAPPABLE (toggle below) so the alternative reading costs
+  one click, not a rebuild. Try to break it. See docs/muslins/email-style-muslin/NOTES.md.
+  <br><b>The fractal-law claim:</b> the detail pane is the pull-tab anatomy muslin's OWN
+  card — same tabs/drawers/interior/Now-line code, just mounted in a new shell instead
+  of a list row. No new card code was written for this muslin.
+</div>
+
+<div class="controls">
+  <label><input type="checkbox" id="flipPanes"> flip panes (detail-left / list-right) <span class="fork-note">(fork 1 — Hallie's confirm pending)</span></label>
+  <label><input type="checkbox" id="showBuckets" checked> show bucket/debug labels</label>
+  <span class="fork-note">j/k moves selection, Enter opens detail focus (cheap keyboard nav — see NOTES.md)</span>
+</div>
+
+<div class="queue-header mono">
+  <span class="star">&#9733;</span>
+  <span class="steers">queue <b id="queueName">support · gen-ed-101</b> steers toward
+    <b>The Ideal Learning Technology Support Experience</b> <span class="fake">[fake star ref]</span></span>
+  <span class="bucket-label" id="queueBucket">[queue = ? see NOTES.md fork 2]</span>
+</div>
+
+<div class="panes" id="panes">
+  <div id="pane-list">
+    <div class="list-head"><span>TICKETS <span class="fake">(fake data, 7)</span></span><span id="listCursorNote" class="fake"></span></div>
+    <div id="listBody"></div>
+  </div>
+  <div id="pane-detail"></div>
+</div>
+
+<footer class="notes mono">
+  seams left showing on purpose: banner, bucket labels, [does nothing yet] on the reply
+  compose and the AI-triage confirm chip, hardcoded fake tickets, no backend. Detail pane
+  card anatomy is a trimmed port of <code>pull-tab-anatomy-muslin.html</code> — same
+  classes, same rulings (120px tabs, Future&rarr;Present&rarr;NOW&rarr;Past, two-zone
+  poles) — not re-litigated here. Drag/drop-onto-tab and the filter-inheritance stub are
+  OUT of scope for this muslin (already answered in the pull-tab muslin); this one only
+  asks about the master-detail shell and the ticket-list idiom.
+</footer>
+
+<script>
+/* ============================== FAKE DATA ============================== */
+// sender = requester frame, subject = ticket name, unread-weight = not-yet-gathered
+// (not yet triaged/read by support staff), struck = done, chip = the course/story it
+// grounds into. One ticket carries the staged AI-triage-guess chip (probe-and-release
+// posture from the BRIEF's Canvas addendum — a guess is a charge, not a verdict).
+const TICKETS = [
+  {
+    id:'t1', requester:'frame-student-4417', subject:'Quiz 3 will not submit past 90%',
+    snippet:'I keep getting a spinner and then it just resets to the intro page…',
+    unread:true, done:false, course:'gen-ed-101', source:'google-sheet', aiGuess:null,
+    future:[ {tag:'story', text:'grade-sync retry queue (candidate fix)'} ],
+    past:[ {tag:'trub', text:'same symptom reported 2026-07-09, unresolved'} ],
+    interior:{
+      future:[ {text:'confirm LMS submit endpoint timeout window'} ],
+      present:[ {text:'reproduce on staff test account', straddler:true} ],
+      past:[ {text:'requester confirmed browser + OS'} ],
+    },
+    thread:[
+      {who:'frame-student-4417', when:'10:02', text:'Quiz 3 will not submit — spinner then reset. Chrome, Windows.'},
+      {who:'frame-support-jamie', when:'10:14', text:'Thanks — can you try a hard refresh and resend the timestamp of the last attempt?'},
+      {who:'frame-student-4417', when:'10:20', text:'Tried that, same thing. Attached a screen recording.'},
+    ],
+  },
+  {
+    id:'t2', requester:'frame-instructor-alvarez', subject:'Roster missing two TAs after Blueprint sync',
+    snippet:'Ran the section sync this morning and both TA accounts dropped off the roster…',
+    unread:true, done:false, course:'bio-210', source:'google-sheet', aiGuess:{course:'bio-210', confirmed:null},
+    future:[ {tag:'task', text:'check Blueprint→section prehension order'} ],
+    past:[],
+    interior:{
+      future:[ {text:'pull sync log for bio-210 dev version'} ],
+      present:[],
+      past:[ {text:'confirmed TA accounts still exist at platform level'} ],
+    },
+    thread:[
+      {who:'frame-instructor-alvarez', when:'09:11', text:'Two TAs vanished from the roster after this morning\'s sync.'},
+    ],
+  },
+  {
+    id:'t3', requester:'frame-student-2290', subject:'Cannot reset password, no reset email arriving',
+    snippet:'Requested a reset three times, nothing in inbox or spam…',
+    unread:false, done:false, course:'chem-101', source:'gmail', aiGuess:null,
+    future:[], past:[ {tag:'trub', text:'mail relay flagged as suspicious 2026-07-15'} ],
+    interior:{ future:[{text:'escalate to email-relay owner'}], present:[], past:[] },
+    thread:[
+      {who:'frame-student-2290', when:'Jul 15', text:'No reset email after three tries.'},
+      {who:'frame-support-jamie', when:'Jul 15', text:'Escalating to platform mail relay — will update here.'},
+    ],
+  },
+  {
+    id:'t4', requester:'frame-instructor-nakamura', subject:'Grade change request for late lab submission',
+    snippet:'Student had a documented emergency, requesting a manual override…',
+    unread:false, done:true, course:'bio-210', source:'gmail', aiGuess:null,
+    future:[], past:[ {tag:'task', text:'grade override applied + logged'} ],
+    interior:{ future:[], present:[], past:[ {text:'override applied, receipt sent', bornFuture:false} ] },
+    thread:[
+      {who:'frame-instructor-nakamura', when:'Jul 12', text:'Requesting manual grade override for documented emergency.'},
+      {who:'frame-support-jamie', when:'Jul 12', text:'Approved and applied. Receipt below.'},
+    ],
+  },
+  {
+    id:'t5', requester:'frame-student-8801', subject:'Video lecture will not load on Safari',
+    snippet:'Works fine on Chrome, blank player on Safari on my Mac…',
+    unread:true, done:false, course:'gen-ed-101', source:'salesforce', aiGuess:null,
+    future:[ {tag:'story', text:'cross-browser video player audit'} ], past:[],
+    interior:{ future:[{text:'file browser + player version'}], present:[], past:[] },
+    thread:[ {who:'frame-student-8801', when:'11:40', text:'Blank player on Safari, works on Chrome.'} ],
+  },
+  {
+    id:'t6', requester:'frame-instructor-alvarez', subject:'Course changes: new module not reflected for students',
+    snippet:'Added Module 6 to the Blueprint two days ago, sections still show 5…',
+    unread:false, done:false, course:'bio-210', source:'google-sheet', aiGuess:{course:'bio-210', confirmed:true},
+    future:[ {tag:'task', text:'force section re-sync'} ], past:[],
+    interior:{ future:[{text:'check Dev-version head vs section HEAD'}], present:[], past:[] },
+    thread:[ {who:'frame-instructor-alvarez', when:'Jul 16', text:'Module 6 not showing for students yet.'} ],
+  },
+  {
+    id:'t7', requester:'frame-student-1123', subject:'Assignment 4 shows as missing but I submitted it',
+    snippet:'Submitted before the deadline, gradebook shows blank...',
+    unread:false, done:true, course:'chem-101', source:'gmail', aiGuess:null,
+    future:[], past:[ {tag:'trub', text:'submission race condition, fixed 2026-07-11'} ],
+    interior:{ future:[], present:[], past:[ {text:'submission relinked, grade restored', bornFuture:true} ] },
+    thread:[
+      {who:'frame-student-1123', when:'Jul 10', text:'Assignment shows missing but I submitted before deadline.'},
+      {who:'frame-support-jamie', when:'Jul 11', text:'Found it — relinked your submission, grade restored.'},
+    ],
+  },
+];
+
+const S = { selected: TICKETS[0].id, flipped:false, showBuckets:true, drawerOpen:{}, interiorOpen:{true:true}, sectionCollapsed:{}, threadDraft:'' };
+S.interiorOpen = { [TICKETS[0].id]: true };
+
+/* ============================ LIST RENDER ============================ */
+function TicketRow(t) {
+  const chips = `<span class="course-chip">${t.course}</span>` +
+    `<span class="source-chip">${t.source}</span>` +
+    (t.aiGuess ? `<span class="ai-chip" data-ai-confirm="${t.id}" title="staged probe-and-release AI ground-guess — [does nothing yet]">
+        [AI triage guess: course-${t.aiGuess.course}${t.aiGuess.confirmed === true ? ' ✓ confirmed' : t.aiGuess.confirmed === false ? ' ✗ rejected' : ', confirm?'}]
+      </span>` : '');
+  return `<div class="trow ${t.unread ? 'unread' : ''} ${t.done ? 'done' : ''} ${t.id === S.selected ? 'selected' : ''}"
+      data-ticket="${t.id}" tabindex="0">
+    <div class="line1">
+      <span class="weight-dot" title="unread weight = not yet gathered"></span>
+      <span class="sender">${t.requester}</span>
+      <span class="fake" style="font-size:.6rem">${t.source}</span>
+    </div>
+    <div class="subject">${t.subject}</div>
+    <div class="snippet">${t.snippet}</div>
+    <div class="chips">${chips}</div>
+  </div>`;
+}
+function renderList() {
+  document.getElementById('listBody').innerHTML = TICKETS.map(TicketRow).join('');
+}
+
+/* ============================ DETAIL RENDER (ported card anatomy) ============================ */
+function DrawerBlock(t, kind) {
+  const key = t.id + ':' + kind;
+  const isOpen = !!S.drawerOpen[key];
+  const items = t[kind] || [];
+  const label = kind === 'future' ? 'Future — where this flows' : 'Past — what flowed in';
+  const inner = items.map(it => `<div class="drawer-item"><span class="tag">${it.tag}</span><span>${it.text}</span></div>`).join('')
+    || '<div class="drawer-item" style="opacity:.4">(empty — fake)</div>';
+  return `<div class="drawer ${kind} ${isOpen ? 'open' : ''}" data-drawer="${key}">
+    <div class="drawer-inner">
+      <div class="drawer-label">${label}${S.showBuckets ? `<span class="bucket-label">${kind === 'future' ? '[after / outside]' : '[before / outside]'}</span>` : ''}</div>
+      ${inner}
+    </div>
+  </div>`;
+}
+function InteriorBlock(t) {
+  const open = !!S.interiorOpen[t.id];
+  const iv = t.interior;
+  const futureRows = iv.future.map(r => `<div class="irow">▫ ${r.text}</div>`).join('') || '<div class="irow" style="opacity:.4">(nothing prehends this yet)</div>';
+  const presentRows = iv.present.map(r => `<div class="irow ${r.straddler ? 'straddler' : ''}">${r.straddler ? '◐' : '▪'} ${r.text}</div>`).join('') || '<div class="irow" style="opacity:.4">(nothing begun above the line)</div>';
+  const pastRows = iv.past.map(r => `<div class="irow ${r.bornFuture ? 'struck' : ''}">✓ ${r.text}</div>`).join('') || '<div class="irow" style="opacity:.4">(nothing done yet)</div>';
+  return `<div class="interior ${open ? 'open' : ''}" data-interior="${t.id}">
+    <div class="interior-inner">
+      <div class="isection future-section" data-section="${t.id}:future">
+        <div class="isection-header" data-section-toggle="${t.id}:future"><span>Interior Future</span>${S.showBuckets ? '<span class="bucket-label">[interior-future]</span>' : ''}</div>
+        <div class="isection-body">${futureRows}</div>
+      </div>
+      <div class="isection-label">Present ${S.showBuckets ? '<span class="bucket-label">[above the line]</span>' : ''}</div>
+      ${presentRows}
+      <div class="now-line">NOW</div>
+      <div class="isection past-section" data-section="${t.id}:past">
+        <div class="isection-header" data-section-toggle="${t.id}:past"><span>Interior Done / Past</span>${S.showBuckets ? '<span class="bucket-label">[interior-past]</span>' : ''}</div>
+        <div class="isection-body">${pastRows}</div>
+      </div>
+    </div>
+  </div>`;
+}
+// COMMENT THREAD — compose at the bottom. Hallie's law: "you compose at the Now, and
+// each view's geometry decides where the Now lives." A reply thread IS a conversation;
+// its Now is its most-recent turn, which lives at the BOTTOM — unlike the TODO
+// interior's Now (mid-card, gathering what's above it). See NOTES.md for the citation
+// back to the STAGE 5 A/B dialogue in the pull-tab muslin.
+function ThreadBlock(t) {
+  const msgs = t.thread.map(m => `<div class="thread-msg"><span class="who mono">${m.who}</span><span>${m.text}<span class="when">${m.when}</span></span></div>`).join('');
+  return `<div class="thread">
+    <div class="thread-label">Comment thread ${S.showBuckets ? '<span class="bucket-label">[compose here — Now lives at the bottom of a conversation]</span>' : ''}</div>
+    ${msgs}
+    <div class="thread-compose-row">
+      <input type="text" class="thread-compose" placeholder="reply…" data-thread-input="${t.id}">
+      <button type="button" class="thread-submit" data-thread-submit="${t.id}">reply <span class="fake">[does nothing yet]</span></button>
+    </div>
+  </div>`;
+}
+function DetailCard(t) {
+  const interiorOpen = !!S.interiorOpen[t.id];
+  return `<div class="detail-card-slot" data-card-slot="${t.id}">
+    ${DrawerBlock(t, 'future')}
+    <div class="card" data-card="${t.id}">
+      <div class="tab-hitzone tl future" data-tab="${t.id}:future"><div class="tab-paint">⇡ future</div></div>
+      <div class="tab-hitzone br past" data-tab="${t.id}:past"><div class="tab-paint">⇣ past</div></div>
+      <div class="face">
+        <div>
+          <div class="requester">${t.requester} <span class="fake">→ ${t.course}</span></div>
+          <div class="label">${t.subject}</div>
+        </div>
+      </div>
+      <div class="ticket-meta-row">
+        <span class="course-chip">${t.course}</span>
+        <span class="source-chip">${t.source}</span>
+        ${t.aiGuess ? `<span class="ai-chip" data-ai-confirm="${t.id}">[AI triage guess: course-${t.aiGuess.course}${t.aiGuess.confirmed === true ? ' ✓ confirmed' : t.aiGuess.confirmed === false ? ' ✗ rejected' : ', confirm?'}]</span>` : ''}
+      </div>
+      <div class="expand-tab" data-expand-toggle="${t.id}">${interiorOpen ? '⌃ close' : '⌄ expand'}</div>
+      ${InteriorBlock(t)}
+      ${ThreadBlock(t)}
+    </div>
+    ${DrawerBlock(t, 'past')}
+  </div>`;
+}
+function renderDetail() {
+  const t = TICKETS.find(x => x.id === S.selected);
+  document.getElementById('pane-detail').innerHTML = t ? DetailCard(t)
+    : `<div class="detail-empty">select a ticket on the ${S.flipped ? 'right' : 'left'} <span class="fake">[does nothing yet without one]</span></div>`;
+}
+function renderAll() { renderList(); renderDetail(); }
+
+/* ============================== EVENTS ============================== */
+document.getElementById('listBody').addEventListener('click', e => {
+  const aiChip = e.target.closest('[data-ai-confirm]');
+  const row = e.target.closest('[data-ticket]');
+  if (aiChip) {
+    const t = TICKETS.find(x => x.id === aiChip.dataset.aiConfirm);
+    if (t && t.aiGuess) {
+      t.aiGuess.confirmed = t.aiGuess.confirmed === true ? null : true; // toggle, staged only
+      console.log('[muslin] AI triage guess confirm toggled [does nothing yet]', t.id, t.aiGuess);
+    }
+    renderList();
+    e.stopPropagation();
+    return;
+  }
+  if (row) {
+    S.selected = row.dataset.ticket;
+    const t = TICKETS.find(x => x.id === S.selected);
+    if (t) t.unread = false; // opening gathers it
+    renderAll();
+  }
+});
+
+document.getElementById('pane-detail').addEventListener('click', e => {
+  const tab = e.target.closest('.tab-hitzone');
+  const expandToggle = e.target.closest('[data-expand-toggle]');
+  const sectionToggle = e.target.closest('[data-section-toggle]');
+  const aiChip = e.target.closest('[data-ai-confirm]');
+  const threadSubmit = e.target.closest('[data-thread-submit]');
+  if (aiChip) {
+    const t = TICKETS.find(x => x.id === aiChip.dataset.aiConfirm);
+    if (t && t.aiGuess) { t.aiGuess.confirmed = t.aiGuess.confirmed === true ? null : true; }
+    renderDetail();
+    return;
+  }
+  if (tab) { S.drawerOpen[tab.dataset.tab] = !S.drawerOpen[tab.dataset.tab]; renderDetail(); return; }
+  if (sectionToggle) { S.sectionCollapsed[sectionToggle.dataset.sectionToggle] = !S.sectionCollapsed[sectionToggle.dataset.sectionToggle]; renderDetail(); return; }
+  if (expandToggle) { S.interiorOpen[expandToggle.dataset.expandToggle] = !S.interiorOpen[expandToggle.dataset.expandToggle]; renderDetail(); return; }
+  if (threadSubmit) {
+    const id = threadSubmit.dataset.threadSubmit;
+    const input = document.querySelector(`[data-thread-input="${id}"]`);
+    const val = (input && input.value || '').trim();
+    if (!val) return;
+    console.log('[muslin] reply submit [does nothing yet]', id, val);
+    const t = TICKETS.find(x => x.id === id);
+    if (t) t.thread.push({ who:'frame-support-you', when:'now', text: val });
+    if (input) input.value = '';
+    renderDetail();
+    return;
+  }
+});
+
+document.getElementById('flipPanes').addEventListener('change', e => {
+  S.flipped = e.target.checked;
+  document.getElementById('panes').classList.toggle('flipped', S.flipped);
+});
+document.getElementById('showBuckets').addEventListener('change', e => {
+  S.showBuckets = e.target.checked;
+  renderDetail();
+});
+
+/* keyboard j/k row navigation (cheap, per the brief's ask) */
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea')) return;
+  const idx = TICKETS.findIndex(t => t.id === S.selected);
+  if (e.key === 'j') {
+    const next = TICKETS[Math.min(idx + 1, TICKETS.length - 1)];
+    if (next) { S.selected = next.id; next.unread = false; renderAll(); }
+  } else if (e.key === 'k') {
+    const prev = TICKETS[Math.max(idx - 1, 0)];
+    if (prev) { S.selected = prev.id; prev.unread = false; renderAll(); }
+  }
+});
+
+renderAll();
+</script>
+</body>
+</html>
+
