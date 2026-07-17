@@ -1,0 +1,494 @@
+<!-- ⚠ MUSLIN — NOT REAL. Built to answer ONE question: does the charge topology
+     read as a night sky, and is it USEFUL (navigation/reflection) or just pretty?
+     Cheap cotton throughout: fake pantheon, hand-tuned star positions, no real
+     data fetch, no persistence. See docs/muslins/star-chart-muslin/NOTES.md for
+     the mapping table and the finding. TEAR THIS APART. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MUSLIN — star chart (NOT REAL)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: Georgia, 'Iowan Old Style', serif;
+    background: #05060a; color: #d8d4c4; overflow-x: hidden;
+  }
+  .banner {
+    border-bottom: 3px dashed #7a6a2e; background: repeating-linear-gradient(45deg,#241d0a,#241d0a 12px,#1a1608 12px,#1a1608 24px);
+    padding: .7rem 1rem; font-family: 'Courier New', monospace; font-size: .82rem; color: #e8c96a;
+  }
+  .banner b { color: #ffdf8a; }
+  header.hud {
+    display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+    padding: .7rem 1rem; border-bottom: 1px solid #23283a; background: #090b12;
+  }
+  header.hud h1 { font-size: 1.05rem; margin: 0; color: #cfd6ee; font-weight: normal; letter-spacing: .04em; }
+  header.hud .tag { font-family: monospace; font-size: .7rem; color: #8a6d1a; background: #241d0a; padding: .15rem .5rem; border-radius: 3px; }
+  .controls { margin-left: auto; display: flex; gap: .8rem; align-items: center; font-size: .82rem; }
+  .controls label { display: flex; gap: .35rem; align-items: center; cursor: pointer; }
+  select, button.reset {
+    background: #12141f; color: #cfd6ee; border: 1px solid #33384c; border-radius: 4px; padding: .25rem .5rem; font-family: inherit; font-size: .82rem;
+  }
+  button.reset { cursor: pointer; }
+  button.reset:hover { background: #1c2032; }
+
+  #sky-wrap { position: relative; width: 100%; height: 78vh; min-height: 520px; }
+  canvas#sky { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+
+  #legend {
+    position: absolute; left: 1rem; bottom: 1rem; font-size: .72rem; color: #8a8fae;
+    background: rgba(9,11,18,.72); border: 1px dashed #33384c; padding: .5rem .7rem; max-width: 20rem; line-height: 1.5;
+  }
+  #legend b { color: #cfd6ee; }
+  #legend .dim-flag { color: #d97757; }
+
+  #inspector {
+    position: absolute; right: 1rem; top: 1rem; width: 17rem; font-size: .8rem;
+    background: rgba(9,11,18,.88); border: 1px solid #33384c; padding: .8rem .9rem; display: none; line-height: 1.55;
+  }
+  #inspector.show { display: block; }
+  #inspector h2 { margin: 0 0 .3rem; font-size: .95rem; color: #ffdf8a; font-weight: normal; }
+  #inspector .mag { color: #8a8fae; font-size: .74rem; margin-bottom: .5rem; }
+  #inspector ul { margin: .3rem 0 0; padding-left: 1.1rem; }
+  #inspector li { margin: .15rem 0; }
+  #inspector .empty { color: #d97757; font-style: italic; }
+  #inspector .close-x { float: right; cursor: pointer; color: #8a8fae; }
+
+  #declination-rail {
+    position: absolute; left: 1rem; top: 1rem; font-size: .68rem; color: #656a82;
+    display: flex; flex-direction: column; gap: 2.2rem; font-family: monospace;
+  }
+  #declination-rail div { border-top: 1px dashed #23283a; padding-top: .15rem; width: 8rem; }
+
+  footer.seams {
+    padding: .6rem 1rem 1.2rem; font-family: 'Courier New', monospace; font-size: .74rem; color: #6b6650;
+    border-top: 1px dashed #33384c; background: #090b12;
+  }
+  footer.seams b { color: #b09030; }
+</style>
+</head>
+<body>
+
+<div class="banner">⚠ MUSLIN / NOT REAL — cheap cotton: hardcoded fake pantheon (echoes the
+real seed sublimes), hand-placed star positions, no backend, no persistence. Built to answer
+ONE question: <b>does charge-topology read as sky, and is it useful or just pretty?</b>
+Critique the mapping, not the twinkle. <b>Tear this apart.</b></div>
+
+<header class="hud">
+  <h1>★ STAR CHART — an observatory reading of the field</h1>
+  <span class="tag">RECESS / play frame</span>
+  <div class="controls">
+    <label>[viewing as] cheat:
+      <select id="frame-select">
+        <option value="all">— unfiltered (god's-eye, not real) —</option>
+        <option value="hallie">frame-hallie</option>
+        <option value="claude-repaint">frame-claude-repaint-integration</option>
+        <option value="claude-clerk">frame-claude-clerk</option>
+        <option value="claude-kanban">frame-kanban-code</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="twinkle-toggle" checked> quiet twinkle</label>
+    <button class="reset" id="reset-btn">reset view</button>
+  </div>
+</header>
+
+<div id="sky-wrap">
+  <canvas id="sky"></canvas>
+  <div id="declination-rail"></div>
+  <div id="legend">
+    <b>Reading the sky</b><br>
+    Bright star = SUBLIME with high magnitude (many stories charged toward it).<br>
+    <span class="dim-flag">Dim/red star</span> = a sublime almost nobody charges toward — an
+    aspiration going unattended.<br>
+    Amber wanderer = a story, orbiting the sublime it's charged toward.<br>
+    Small dust mote = a todo, near its story.<br>
+    Faint sight-line = a charge edge — appears on hover only (attention draws the constellation).<br>
+    Nothing is drawn at the very center-behind — that darkness is the V=0 pole, deliberately unrendered.
+  </div>
+  <div id="inspector">
+    <span class="close-x" id="inspector-close">✕</span>
+    <h2 id="insp-name">—</h2>
+    <div class="mag" id="insp-mag">—</div>
+    <div id="insp-body"></div>
+  </div>
+</div>
+
+<footer class="seams">
+  <b>SEAMS SHOWING:</b> pantheon is fake, echoing the real seed (10 Ideal-Experience stars +
+  The Good). Positions are hand-placed, not force-directed — a real build needs a layout pass
+  (see NOTES.md "what breaks"). [viewing as] here only toggles which stories/todos render, not
+  which STARS exist — real frame-relative sky would also gate sublime visibility per viewer,
+  unbuilt here. No persistence; refresh = same fake state, always. Magnitude = raw charge
+  count, no decay/recency weighting — see NOTES.md finding.
+</footer>
+
+<script>
+// ============================================================
+// FAKE SEED DATA — echoes the real Ideal-Experience pantheon.
+// This is invented for the muslin; it is NOT pulled from Penelope.
+// ============================================================
+const THE_GOOD = { id: 'good', name: 'The Good', tier: 0 }; // zenith, tier 0 = closest to zenith
+
+const SUBLIMES = [
+  // tier 1 = near-zenith declination band; tier 3 = low on the horizon
+  { id: 's1', name: 'Ease',                 tier: 1, dec: 0.92 },
+  { id: 's2', name: 'Clarity',              tier: 1, dec: 0.88 },
+  { id: 's3', name: 'Trust',                tier: 1, dec: 0.85 },
+  { id: 's4', name: 'Delight',              tier: 2, dec: 0.62 },
+  { id: 's5', name: 'Belonging',            tier: 2, dec: 0.58 },
+  { id: 's6', name: 'Momentum',             tier: 2, dec: 0.55 },
+  { id: 's7', name: 'Legibility',           tier: 2, dec: 0.50 },
+  { id: 's8', name: 'Repair',               tier: 3, dec: 0.30 },
+  { id: 's9', name: 'Restraint',            tier: 3, dec: 0.24 },
+  { id: 's10', name: 'Quiet Competence',    tier: 3, dec: 0.18 },
+];
+
+// stories charged toward sublimes (amber wanderers), tagged with which frame "owns" them
+// for the [viewing as] cheat toggle
+const STORIES = [
+  { id: 'st1', name: 'onboarding flow rewrite', charges: ['s2', 's1'], frame: 'claude-repaint', done: false },
+  { id: 'st2', name: 'card-open lazy bulkhead', charges: ['s1', 's6'], frame: 'claude-clerk', done: false },
+  { id: 'st3', name: 'kanban column semantics', charges: ['s7'], frame: 'claude-kanban', done: false },
+  { id: 'st4', name: 'reconciliation muslin follow-through', charges: ['s5', 's3'], frame: 'hallie', done: false },
+  { id: 'st5', name: 'search index perf pass', charges: ['s2', 's6'], frame: 'claude-repaint', done: false },
+  { id: 'st6', name: 'drawer close-tab palette pass', charges: ['s4'], frame: 'hallie', done: true },
+  { id: 'st7', name: 'stack-overflow fix (cardview cycles)', charges: ['s3'], frame: 'claude-clerk', done: true },
+  { id: 'st8', name: 'auth grooming ticket triage', charges: ['s7', 's2'], frame: 'claude-kanban', done: false },
+  { id: 'st9', name: 'unity-flavor dress pass', charges: ['s4', 's5'], frame: 'hallie', done: false },
+  { id: 'st10', name: 'terminal routing bugfix', charges: ['s2'], frame: 'claude-repaint', done: false },
+  // s8, s9, s10 deliberately under-charged or uncharged — see NOTES.md finding
+  { id: 'st11', name: 'one lonely repair ticket', charges: ['s8'], frame: 'hallie', done: false },
+];
+
+const TODOS = [
+  { id: 't1', story: 'st1', name: 'copy pass on empty states' },
+  { id: 't2', story: 'st1', name: 'a11y label sweep' },
+  { id: 't3', story: 'st2', name: 'wire lazy import boundary' },
+  { id: 't4', story: 'st3', name: 'rename column headers' },
+  { id: 't5', story: 'st4', name: 'reconcile spine vs rail' },
+  { id: 't6', story: 'st5', name: 'profile society.ts index' },
+  { id: 't7', story: 'st8', name: 'draft candidate sublime list' },
+  { id: 't8', story: 'st9', name: 'ink-forward color check' },
+];
+
+// magnitude = raw count of NON-DONE story charges landing on this sublime
+function magnitude(subId) {
+  return STORIES.filter(s => s.charges.includes(subId) && !s.done).length;
+}
+
+// ============================================================
+// LAYOUT — hand-placed, NOT force-directed (a real seam; see NOTES.md)
+// ============================================================
+const canvas = document.getElementById('sky');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() {
+  const rect = canvas.parentElement.getBoundingClientRect();
+  W = canvas.width = rect.width;
+  H = canvas.height = rect.height;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// declination bands: tier 0 (The Good) near zenith (top), tier 3 near horizon (bottom)
+// dec in [0,1], 1 = zenith (top of canvas), 0 = horizon (bottom)
+function decToY(dec) { return H * (1 - dec) * 0.86 + H * 0.06; }
+
+const positions = {}; // id -> {x,y}
+function seedPositions() {
+  positions[THE_GOOD.id] = { x: 0, y: decToY(0.985), fx: 0.5 }; // fx = fractional x, centered
+  const spread = [0.5, 0.18, 0.82, 0.35, 0.65, 0.08, 0.92, 0.28, 0.72, 0.5];
+  SUBLIMES.forEach((s, i) => {
+    positions[s.id] = { fx: spread[i % spread.length], y: decToY(s.dec) };
+  });
+}
+seedPositions();
+
+function layoutXY() {
+  positions[THE_GOOD.id].x = W * positions[THE_GOOD.id].fx;
+  SUBLIMES.forEach(s => { positions[s.id].x = W * positions[s.id].fx; });
+}
+layoutXY();
+window.addEventListener('resize', layoutXY);
+
+// wanderer (story) positions: orbit near their brightest-charged sublime
+const storyPos = {};
+function layoutStories() {
+  STORIES.forEach((st, i) => {
+    const primary = st.charges[0];
+    const center = positions[primary];
+    if (!center) return;
+    const angle = (i * 2.4) % (Math.PI * 2);
+    const r = 38 + (i % 4) * 14;
+    storyPos[st.id] = {
+      x: center.x + Math.cos(angle) * r,
+      y: center.y + Math.sin(angle) * r * 0.6 + (st.done ? H * 0.35 : 0), // done stories sink below horizon
+    };
+  });
+}
+layoutStories();
+window.addEventListener('resize', layoutStories);
+
+// todo (dust) positions: near their story
+const todoPos = {};
+function layoutTodos() {
+  TODOS.forEach((t, i) => {
+    const parent = storyPos[t.story];
+    if (!parent) return;
+    const angle = (i * 1.7 + 1) % (Math.PI * 2);
+    const r = 10 + (i % 3) * 5;
+    todoPos[t.id] = { x: parent.x + Math.cos(angle) * r, y: parent.y + Math.sin(angle) * r };
+  });
+}
+layoutTodos();
+window.addEventListener('resize', layoutTodos);
+
+// ============================================================
+// STATE
+// ============================================================
+let frameFilter = 'all';
+let hoverTarget = null;
+let selectedSublime = null;
+let twinkle = true;
+let t0 = performance.now();
+
+function visibleStories() {
+  return STORIES.filter(s => frameFilter === 'all' || s.frame === frameFilter);
+}
+function visibleTodos() {
+  const storyIds = new Set(visibleStories().map(s => s.id));
+  return TODOS.filter(t => storyIds.has(t.story));
+}
+
+// ============================================================
+// DRAW
+// ============================================================
+function starRadius(mag) {
+  // brightness IS pull: magnitude drives radius + glow, floor so dim stars stay visible-but-dim
+  return 2.2 + Math.min(mag, 6) * 1.6;
+}
+function starColor(mag) {
+  if (mag === 0) return '#7a3b32'; // dim red — an aspiration nobody charges toward
+  if (mag === 1) return '#a8724f';
+  if (mag <= 3) return '#e0c98a';
+  return '#fff6d8';
+}
+
+function drawBackground() {
+  ctx.fillStyle = '#05060a';
+  ctx.fillRect(0, 0, W, H);
+  // faint background dust, pure decoration
+  ctx.save();
+  const seed = 42;
+  let rnd = seed;
+  function nrand() { rnd = (rnd * 9301 + 49297) % 233280; return rnd / 233280; }
+  for (let i = 0; i < 140; i++) {
+    ctx.globalAlpha = 0.15 + nrand() * 0.25;
+    ctx.fillStyle = '#3a3f55';
+    const x = nrand() * W, y = nrand() * H * 0.9;
+    ctx.fillRect(x, y, 1, 1);
+  }
+  ctx.restore();
+}
+
+function drawSightlines() {
+  if (!hoverTarget) return;
+  const sub = hoverTarget;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(224,201,138,0.55)';
+  ctx.lineWidth = 0.6;
+  visibleStories().forEach(st => {
+    if (!st.charges.includes(sub) || st.done) return;
+    const a = positions[sub], b = storyPos[st.id];
+    if (!a || !b) return;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawConstellation() {
+  if (!selectedSublime) return;
+  const sub = selectedSublime;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,223,138,0.85)';
+  ctx.lineWidth = 1.1;
+  ctx.shadowColor = 'rgba(255,223,138,0.6)';
+  ctx.shadowBlur = 4;
+  visibleStories().forEach(st => {
+    if (!st.charges.includes(sub) || st.done) return;
+    const a = positions[sub], b = storyPos[st.id];
+    if (!a || !b) return;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawSublimes(time) {
+  // The Good — largest, near zenith, always at max brightness (it's not charged toward, it IS the aim)
+  const good = positions[THE_GOOD.id];
+  const goodTwinkle = twinkle ? 1 + 0.08 * Math.sin(time / 900) : 1;
+  ctx.save();
+  ctx.fillStyle = '#fffdf0';
+  ctx.shadowColor = '#fff6d8';
+  ctx.shadowBlur = 22 * goodTwinkle;
+  ctx.beginPath();
+  ctx.arc(good.x, good.y, 5.5 * goodTwinkle, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.fillStyle = '#cfd6ee';
+  ctx.font = '11px Georgia';
+  ctx.textAlign = 'center';
+  ctx.fillText('The Good', good.x, good.y - 14);
+
+  SUBLIMES.forEach(s => {
+    const mag = magnitude(s.id);
+    const p = positions[s.id];
+    const r = starRadius(mag);
+    const flick = twinkle ? 1 + 0.12 * Math.sin(time / (500 + s.id.charCodeAt(1) * 40)) : 1;
+    const isSelected = selectedSublime === s.id;
+    ctx.save();
+    ctx.fillStyle = starColor(mag);
+    ctx.shadowColor = starColor(mag);
+    ctx.shadowBlur = (isSelected ? 26 : mag === 0 ? 4 : 10 + mag * 2) * flick;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r * flick, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    if (isSelected) {
+      ctx.strokeStyle = 'rgba(255,223,138,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 8, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.fillStyle = mag === 0 ? '#d97757' : '#9aa0bd';
+    ctx.font = '10.5px Georgia';
+    ctx.textAlign = 'center';
+    ctx.fillText(s.name, p.x, p.y + r + 13);
+  });
+}
+
+function drawStories(time) {
+  visibleStories().forEach(st => {
+    const p = storyPos[st.id];
+    if (!p) return;
+    const alpha = st.done ? 0.18 : 0.85;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#e8a25a';
+    ctx.shadowColor = '#e8a25a';
+    ctx.shadowBlur = st.done ? 0 : 5;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawTodos() {
+  visibleTodos().forEach(t => {
+    const p = todoPos[t.id];
+    if (!p) return;
+    ctx.save();
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = '#8a8fae';
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function frame(time) {
+  drawBackground();
+  drawSightlines();
+  drawConstellation();
+  drawTodos();
+  drawStories(time);
+  drawSublimes(time);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ============================================================
+// INTERACTION
+// ============================================================
+function hitSublime(mx, my) {
+  for (const s of SUBLIMES) {
+    const p = positions[s.id];
+    const r = starRadius(magnitude(s.id)) + 6;
+    if (Math.hypot(mx - p.x, my - p.y) <= r) return s.id;
+  }
+  return null;
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  hoverTarget = hitSublime(mx, my);
+  canvas.style.cursor = hoverTarget ? 'pointer' : 'crosshair';
+});
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const hit = hitSublime(mx, my);
+  if (hit) {
+    selectedSublime = (selectedSublime === hit) ? null : hit;
+    showInspector(hit);
+  } else {
+    selectedSublime = null;
+    hideInspector();
+  }
+});
+
+function showInspector(subId) {
+  const s = SUBLIMES.find(x => x.id === subId);
+  const mag = magnitude(subId);
+  const charged = visibleStories().filter(st => st.charges.includes(subId) && !st.done);
+  document.getElementById('inspector').classList.add('show');
+  document.getElementById('insp-name').textContent = '★ ' + s.name;
+  document.getElementById('insp-mag').textContent =
+    `magnitude ${mag} · declination band ${['','zenith','mid','low'][s.tier] || 'mid'}` +
+    (mag === 0 ? ' · DIM — nobody is charging here' : '');
+  const body = document.getElementById('insp-body');
+  if (charged.length === 0) {
+    body.innerHTML = '<div class="empty">No live stories charge toward this sublime. It renders dim on purpose — see NOTES.md finding.</div>';
+  } else {
+    body.innerHTML = '<ul>' + charged.map(st => `<li>${st.name}</li>`).join('') + '</ul>';
+  }
+}
+function hideInspector() { document.getElementById('inspector').classList.remove('show'); }
+document.getElementById('inspector-close').addEventListener('click', () => { selectedSublime = null; hideInspector(); });
+
+document.getElementById('frame-select').addEventListener('change', e => {
+  frameFilter = e.target.value;
+  layoutStories(); layoutTodos();
+});
+document.getElementById('twinkle-toggle').addEventListener('change', e => { twinkle = e.target.checked; });
+document.getElementById('reset-btn').addEventListener('click', () => {
+  frameFilter = 'all';
+  document.getElementById('frame-select').value = 'all';
+  selectedSublime = null;
+  hideInspector();
+  layoutStories(); layoutTodos();
+});
+
+// declination rail labels (a quiet altitude read)
+const rail = document.getElementById('declination-rail');
+['zenith — The Good', 'tier 1 — near-zenith', 'tier 2 — mid sky', 'tier 3 — low, near horizon'].forEach(label => {
+  const d = document.createElement('div');
+  d.textContent = label;
+  rail.appendChild(d);
+});
+</script>
+</body>
+</html>

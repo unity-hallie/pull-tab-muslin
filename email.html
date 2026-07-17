@@ -23,7 +23,23 @@
      it would touch a backend, system fonts, a banner, debug labels left in. Built
      against api/static/muslins/pull-tab-anatomy-muslin.html's idiom (see
      docs/muslins/pull-tab-muslin/NOTES.md) — same palette, same "no HTML5 DnD" house
-     law reused where drag exists at all (it mostly doesn't here — j/k nav instead). -->
+     law reused where drag exists at all (it mostly doesn't here — j/k nav instead).
+
+     HYBRID AMENDMENT — 2026-07-17, Hallie's 14:08 ask verbatim: "For the ticket can we
+     get a hybrid: An email style view with a list on the left and the ticket thread in
+     the window for the ticket on the left selected?" This muslin OWNS master-detail, so
+     the hybrid lands here: the detail pane grows a [card] | [thread] MODE TOGGLE at its
+     top. THREAD mode ports thread-style-muslin.html's message-stack reader (see
+     docs/muslins/thread-style-muslin/NOTES.md) — capture/comment/AI-triage/system-line/
+     work-receipt kinds, collapse-older stack, per-kind toggles, bottom composer — into
+     THIS pane, reading the SAME selected ticket the list already governs. CARD mode is
+     untouched (the original ported pull-tab anatomy). Defaults to THREAD per the ask.
+     Both modes staying is itself the point — stroke 7 (the fractal law) made switchable:
+     two vantages on one selected event, not a replacement. A [viewing as: support |
+     requester] cheat-toggle stages the thread's CHIRALITY (viewer's own messages sit
+     right) so the flip is demoable without wiring real auth. The reply composer carries
+     NO register chips in either mode — per Hallie's everything-mints-done law, a reply
+     is a record, not a draft-with-options. See NOTES.md for what's ruled vs forked. -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -173,6 +189,94 @@
     color:#c0392b; background:#fff; padding:0 .3em; border:1px dashed #c0392b; border-radius:3px; opacity:.85;
     margin-left:.5rem; vertical-align:middle; }
 
+  /* ===== HYBRID: detail-pane mode toggle (card | thread) — stroke 7 made switchable,
+     see the HYBRID AMENDMENT comment at file top. Sits ABOVE whichever mode is active,
+     never scrolls away with the content it governs. ===== */
+  .mode-bar { display:flex; align-items:center; gap:.6rem; padding:.5rem .7rem; background:#fff;
+    border:2px solid #23291f; border-bottom:none; font-family:ui-monospace,monospace; font-size:.72rem; }
+  .mode-toggle { display:flex; border:1.5px solid #23291f; border-radius:5px; overflow:hidden; }
+  .mode-toggle button { border:none; background:#f1efe8; padding:.35rem .8rem; cursor:pointer;
+    font-family:ui-monospace,monospace; font-size:.72rem; font-weight:600; color:#6b6f66; }
+  .mode-toggle button.active { background:#ffe08a; color:#23291f; }
+  .mode-toggle button:not(:last-child) { border-right:1.5px solid #23291f; }
+  .chirality-toggle { margin-left:auto; display:flex; align-items:center; gap:.4rem; color:#8a6d12; }
+  .chirality-toggle select { font-family:ui-monospace,monospace; font-size:.7rem; border:1px dashed #b08900;
+    background:#fff7d6; border-radius:4px; padding:.15rem .4rem; }
+
+  /* ===== HYBRID: thread mode, ported from thread-style-muslin.html — new message
+     anatomy, deliberately NOT sharing classnames with the card anatomy above (the
+     thread-style muslin's NOTES.md names this a deliberate non-port in the other
+     direction; here it's the reverse graft, same reasoning holds). ===== */
+  #pane-detail.mode-thread { min-height:0; }
+  .tsubject-header { background:#fff; border:2px solid #23291f; border-top:none; box-shadow:3px 3px 0 #23291f18;
+    padding:.9rem 1.1rem; margin-bottom:1.2rem; }
+  .tsubject-header .subject-line { font-family:Georgia,'Source Serif 4',serif; font-size:1.2rem; font-weight:700; margin-bottom:.35rem; }
+  .tsubject-header .meta-row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; font-size:.78rem; color:#6b6f66; }
+  .status-chip { font-size:.6rem; font-family:ui-monospace,monospace; border:1px solid #7a8f5a; color:#4a6b2c;
+    background:#eef5e6; padding:.05rem .4rem; border-radius:10px; }
+  .status-chip.done { border-color:#999; color:#777; background:#eee; }
+
+  .tmsg { background:#fff; border:1px solid #ddd6c4; border-radius:6px; margin-bottom:.6rem;
+    box-shadow:1px 2px 0 #23291f0d; overflow:hidden; }
+  .tmsg-head { display:flex; align-items:center; gap:.6rem; padding:.6rem .85rem; cursor:pointer; }
+  .tmsg-head:hover { background:#fbf7e8; }
+  .tmsg-avatar { width:28px; height:28px; border-radius:50%; flex:none; display:flex; align-items:center;
+    justify-content:center; font-size:.7rem; font-weight:700; color:#fff; }
+  .tmsg.kind-capture .tmsg-avatar { background:#4a7ec2; }
+  .tmsg.kind-comment .tmsg-avatar { background:#7a8f5a; }
+  .tmsg.kind-triage .tmsg-avatar { background:#b08900; }
+  .tmsg.kind-receipt .tmsg-avatar { background:#8a5a9e; }
+  .tmsg-from { font-weight:700; font-size:.86rem; flex:1; }
+  .tmsg-when { font-size:.68rem; color:#aaa; }
+  .tmsg-kind-tag { font-size:.56rem; font-family:ui-monospace,monospace; text-transform:uppercase; letter-spacing:.04em;
+    color:#999; border:1px dashed #ccc; padding:.05rem .35rem; border-radius:8px; }
+  .tmsg-body { padding:0 .85rem .8rem 3.25rem; font-size:.86rem; line-height:1.45; }
+  .tmsg-body .quote-block { border-left:3px solid #c9c2ac; margin:.4rem 0 .5rem; padding:.25rem .7rem;
+    font-size:.8rem; color:#767a6e; background:#faf8f2; }
+  .tmsg-body .quote-attrib { font-size:.66rem; color:#a8ad9e; margin-bottom:.15rem; }
+  .treceipt-block { border:1px dashed #8a5a9e; background:#f7f0fb; padding:.45rem .7rem; border-radius:5px;
+    font-family:ui-monospace,monospace; font-size:.78rem; color:#5c3a6e; }
+  .tai-stub-row { margin-top:.5rem; display:flex; gap:.5rem; }
+  .tai-stub-row button { font-size:.72rem; padding:.3rem .65rem; border:1.5px solid #b08900; border-radius:4px;
+    background:#fff7d6; cursor:pointer; font-weight:600; color:#8a6508; }
+  .tai-stub-row button.confirm { border-color:#4a6b2c; color:#4a6b2c; background:#eef5e6; }
+
+  /* chirality: viewer's own messages sit RIGHT, mirrored layout, per Hallie's ask
+     ("chat strokes apply to the thread pane where relevant") */
+  .tmsg.mine .tmsg-head { flex-direction:row-reverse; }
+  .tmsg.mine .tmsg-from { text-align:right; }
+  .tmsg.mine .tmsg-body { padding:0 3.25rem .8rem .85rem; text-align:right; }
+  .tmsg.mine .tmsg-body .quote-block { text-align:left; }
+  .tmsg.mine .tai-stub-row { justify-content:flex-end; }
+
+  .tsysline { display:flex; align-items:center; gap:.6rem; padding:.35rem .85rem .35rem 3.25rem; font-size:.72rem;
+    color:#9a9d90; font-family:ui-monospace,monospace; }
+  .tsysline::before { content:'—'; color:#ccc; }
+  .tsysline .sys-tag { border:1px dotted #ccc; padding:0 .35em; border-radius:8px; }
+
+  .tcollapsed-stack { display:flex; align-items:center; gap:.5rem; padding:.5rem .85rem; background:#f3f1ea;
+    border:1px dashed #ccc4b3; border-radius:6px; margin-bottom:.6rem; cursor:pointer; font-size:.78rem; color:#767a6e; }
+  .tcollapsed-stack:hover { background:#ece9de; }
+  .tcollapsed-stack .stack-count { font-family:ui-monospace,monospace; font-weight:700; }
+
+  .prehend-note { font-size:.6rem; font-family:ui-monospace,monospace; color:#8a8f82; margin-top:.2rem;
+    display:flex; align-items:center; gap:.3rem; }
+  .prehend-note::before { content:'⤷ prehends'; color:#a8ad9e; }
+
+  .tcomposer { border-top:2px dashed #23291f; padding:.9rem 1rem; background:#fbfaf5; }
+  .tcomposer-label { font-family:ui-monospace,monospace; font-size:.62rem; text-transform:uppercase;
+    letter-spacing:.05em; color:#8a6d12; margin-bottom:.5rem; }
+  .tquote-ref { display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem; font-size:.72rem;
+    background:#fff3c4; border:1px dashed #b08900; padding:.3rem .55rem; border-radius:4px; color:#6b5504; }
+  .tquote-ref button { margin-left:auto; font-size:.68rem; border:1px solid #b08900; background:#fff; border-radius:3px;
+    cursor:pointer; padding:.1rem .4rem; }
+  .tcompose-row { display:flex; gap:.4rem; }
+  .treply-to-btn { font-size:.6rem; font-family:ui-monospace,monospace; color:#767a6e; background:none;
+    border:1px dotted #ccc; border-radius:8px; padding:.05rem .4rem; cursor:pointer; margin-left:.4rem; }
+  .treply-to-btn:hover { background:#f3f1ea; }
+  .related-stub { font-size:.68rem; font-family:ui-monospace,monospace; color:#8a6508; border:1px dashed #b08900;
+    background:#fff7d6; padding:.1rem .5rem; border-radius:10px; margin-left:auto; cursor:default; }
+
   footer.notes { max-width:1360px; margin:1.4rem auto; font-size:.76rem; opacity:.75; line-height:1.5; }
   code { background:#eee; padding:0 .25em; border-radius:3px; }
   kbd { font-family:ui-monospace,monospace; background:#eee; border:1px solid #ccc; border-bottom-width:2px;
@@ -192,6 +296,10 @@
   <br><b>The fractal-law claim:</b> the detail pane is the pull-tab anatomy muslin's OWN
   card — same tabs/drawers/interior/Now-line code, just mounted in a new shell instead
   of a list row. No new card code was written for this muslin.
+  <br><b>HYBRID (2026-07-17 14:08):</b> the detail pane now also carries a [card] |
+  [thread] mode toggle — THREAD ports thread-style-muslin.html's message reader onto the
+  SAME selected ticket. Both modes are staying; the toggle IS the muslin question now.
+  See docs/muslins/email-style-muslin/NOTES.md.
 </div>
 
 <div class="controls">
@@ -248,6 +356,18 @@ const TICKETS = [
       {who:'frame-support-jamie', when:'10:14', text:'Thanks — can you try a hard refresh and resend the timestamp of the last attempt?'},
       {who:'frame-student-4417', when:'10:20', text:'Tried that, same thing. Attached a screen recording.'},
     ],
+    threadMsgs:[
+      { id:'t1m1', kind:'capture', laid_by:'frame-student-4417', when:'Jul 15, 10:02',
+        body:'Quiz 3 will not submit — I keep getting a spinner and then it just resets to the intro page. Chrome, Windows.' },
+      { id:'t1m2', kind:'sysline', laid_by:'door', when:'Jul 15, 10:03', body:'gathered — ticket entered the support queue', tag:'gathered' },
+      { id:'t1m3', kind:'triage', laid_by:'frame-ai-triage', when:'Jul 15, 10:04',
+        body:'Guessing this grounds in <b>gen-ed-101</b>, category <b>grade-sync</b>, based on subject + course roster match.',
+        aiGuess:{ course:'gen-ed-101', category:'grade-sync', confirmed:null } },
+      { id:'t1m4', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 15, 10:14',
+        body:'Thanks — can you try a hard refresh and resend the timestamp of the last attempt?' },
+      { id:'t1m5', kind:'comment', laid_by:'frame-student-4417', when:'Jul 15, 10:20', quotes:'t1m4',
+        body:'Tried that, same thing. Attached a screen recording.' },
+    ],
   },
   {
     id:'t2', requester:'frame-instructor-alvarez', subject:'Roster missing two TAs after Blueprint sync',
@@ -263,6 +383,14 @@ const TICKETS = [
     thread:[
       {who:'frame-instructor-alvarez', when:'09:11', text:'Two TAs vanished from the roster after this morning\'s sync.'},
     ],
+    threadMsgs:[
+      { id:'t2m1', kind:'capture', laid_by:'frame-instructor-alvarez', when:'09:11',
+        body:'Two TAs vanished from the roster after this morning\'s sync.' },
+      { id:'t2m2', kind:'sysline', laid_by:'door', when:'09:12', body:'gathered — ticket entered the support queue', tag:'gathered' },
+      { id:'t2m3', kind:'triage', laid_by:'frame-ai-triage', when:'09:13',
+        body:'Guessing this grounds in <b>bio-210</b>, category <b>roster-sync</b>.',
+        aiGuess:{ course:'bio-210', category:'roster-sync', confirmed:null } },
+    ],
   },
   {
     id:'t3', requester:'frame-student-2290', subject:'Cannot reset password, no reset email arriving',
@@ -273,6 +401,12 @@ const TICKETS = [
     thread:[
       {who:'frame-student-2290', when:'Jul 15', text:'No reset email after three tries.'},
       {who:'frame-support-jamie', when:'Jul 15', text:'Escalating to platform mail relay — will update here.'},
+    ],
+    threadMsgs:[
+      { id:'t3m1', kind:'capture', laid_by:'frame-student-2290', when:'Jul 15', body:'No reset email after three tries.' },
+      { id:'t3m2', kind:'sysline', laid_by:'door', when:'Jul 15', body:'gathered — ticket entered the support queue', tag:'gathered' },
+      { id:'t3m3', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 15', quotes:'t3m1',
+        body:'Escalating to platform mail relay — will update here.' },
     ],
   },
   {
@@ -285,6 +419,15 @@ const TICKETS = [
       {who:'frame-instructor-nakamura', when:'Jul 12', text:'Requesting manual grade override for documented emergency.'},
       {who:'frame-support-jamie', when:'Jul 12', text:'Approved and applied. Receipt below.'},
     ],
+    threadMsgs:[
+      { id:'t4m1', kind:'capture', laid_by:'frame-instructor-nakamura', when:'Jul 12',
+        body:'Requesting manual grade override for documented emergency.' },
+      { id:'t4m2', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 12', quotes:'t4m1',
+        body:'Approved and applied. Receipt below.' },
+      { id:'t4m3', kind:'receipt', laid_by:'frame-work-event', when:'Jul 12',
+        body:'work laid: <b>grade-override-applied</b> — grounds in this ticket', workTag:'grade-override-applied' },
+      { id:'t4m4', kind:'sysline', laid_by:'door', when:'Jul 12', body:'done — ticket closed', tag:'done' },
+    ],
   },
   {
     id:'t5', requester:'frame-student-8801', subject:'Video lecture will not load on Safari',
@@ -293,6 +436,10 @@ const TICKETS = [
     future:[ {tag:'story', text:'cross-browser video player audit'} ], past:[],
     interior:{ future:[{text:'file browser + player version'}], present:[], past:[] },
     thread:[ {who:'frame-student-8801', when:'11:40', text:'Blank player on Safari, works on Chrome.'} ],
+    threadMsgs:[
+      { id:'t5m1', kind:'capture', laid_by:'frame-student-8801', when:'11:40', body:'Blank player on Safari, works on Chrome.' },
+      { id:'t5m2', kind:'sysline', laid_by:'door', when:'11:41', body:'gathered — ticket entered the support queue', tag:'gathered' },
+    ],
   },
   {
     id:'t6', requester:'frame-instructor-alvarez', subject:'Course changes: new module not reflected for students',
@@ -301,6 +448,12 @@ const TICKETS = [
     future:[ {tag:'task', text:'force section re-sync'} ], past:[],
     interior:{ future:[{text:'check Dev-version head vs section HEAD'}], present:[], past:[] },
     thread:[ {who:'frame-instructor-alvarez', when:'Jul 16', text:'Module 6 not showing for students yet.'} ],
+    threadMsgs:[
+      { id:'t6m1', kind:'capture', laid_by:'frame-instructor-alvarez', when:'Jul 16', body:'Module 6 not showing for students yet.' },
+      { id:'t6m2', kind:'triage', laid_by:'frame-ai-triage', when:'Jul 16',
+        body:'Guessing this grounds in <b>bio-210</b>, category <b>section-sync</b>.',
+        aiGuess:{ course:'bio-210', category:'section-sync', confirmed:true } },
+    ],
   },
   {
     id:'t7', requester:'frame-student-1123', subject:'Assignment 4 shows as missing but I submitted it',
@@ -312,11 +465,24 @@ const TICKETS = [
       {who:'frame-student-1123', when:'Jul 10', text:'Assignment shows missing but I submitted before deadline.'},
       {who:'frame-support-jamie', when:'Jul 11', text:'Found it — relinked your submission, grade restored.'},
     ],
+    threadMsgs:[
+      { id:'t7m1', kind:'capture', laid_by:'frame-student-1123', when:'Jul 10', body:'Assignment shows missing but I submitted before deadline.' },
+      { id:'t7m2', kind:'comment', laid_by:'frame-support-jamie', when:'Jul 11', quotes:'t7m1',
+        body:'Found it — relinked your submission, grade restored.' },
+      { id:'t7m3', kind:'receipt', laid_by:'frame-work-event', when:'Jul 11',
+        body:'work laid: <b>submission-relink-fix</b> — grounds in this ticket', workTag:'submission-relink-fix' },
+      { id:'t7m4', kind:'sysline', laid_by:'door', when:'Jul 11', body:'done — ticket closed', tag:'done' },
+    ],
   },
 ];
 
-const S = { selected: TICKETS[0].id, flipped:false, showBuckets:true, drawerOpen:{}, interiorOpen:{true:true}, sectionCollapsed:{}, threadDraft:'' };
+const S = { selected: TICKETS[0].id, flipped:false, showBuckets:true, drawerOpen:{}, interiorOpen:{true:true}, sectionCollapsed:{}, threadDraft:'',
+  // HYBRID state — mode per detail pane ("card" | "thread"), defaults to THREAD per
+  // Hallie's 14:08 ask. viewingAs stages the chirality cheat-toggle (support|requester).
+  detailMode: 'thread', viewingAs: 'support',
+  showSystemLines: true, showReceipts: true, stackOpen: {}, quoteDraft: {} };
 S.interiorOpen = { [TICKETS[0].id]: true };
+const STACK_THRESHOLD = 4;
 
 /* ============================ LIST RENDER ============================ */
 function TicketRow(t) {
@@ -394,9 +560,141 @@ function ThreadBlock(t) {
     </div>
   </div>`;
 }
+// ===== HYBRID: THREAD MODE — ported from thread-style-muslin.html, keyed per-ticket so
+// switching the selected ticket in the list swaps thread content live (same fake data
+// as the list — TICKETS[].threadMsgs — selection must feel real). See NOTES.md. =====
+function tStripTags(s) { return s.replace(/<[^>]+>/g, ''); }
+function tAvatarLetter(laid_by) {
+  if (laid_by === 'door') return '⌸';
+  if (laid_by === 'frame-ai-triage') return 'AI';
+  if (laid_by === 'frame-work-event') return '⚒';
+  return (laid_by.match(/frame-(\w)/) || [,'?'])[1].toUpperCase();
+}
+// chirality: "mine" = the frame currently in the viewing-as seat (support|requester)
+function tIsMine(t, laid_by) {
+  if (S.viewingAs === 'support') return laid_by === 'frame-support-jamie' || laid_by === 'frame-support-you';
+  return laid_by === t.requester;
+}
+function TQuoteBlock(t, quotedId) {
+  const msgs = t.threadMsgs;
+  const src = msgs.find(m => m.id === quotedId);
+  if (!src) return '';
+  return `<div class="quote-block">
+    <div class="quote-attrib mono">${src.laid_by} · ${src.when}</div>
+    ${tStripTags(src.body)}
+  </div>
+  <div class="prehend-note">${quotedId} — meaning is in the edges; quoting IS prehension made visible</div>`;
+}
+function TMessageBlock(t, m) {
+  if (m.kind === 'sysline') {
+    return `<div class="tsysline mono"><span class="sys-tag">${m.tag}</span> ${m.body}
+      ${S.showBuckets ? '<span class="bucket-label">[state change — quiet, non-message]</span>' : ''}</div>`;
+  }
+  const bodyExtra = [];
+  if (m.quotes) bodyExtra.push(TQuoteBlock(t, m.quotes));
+  if (m.kind === 'receipt') {
+    bodyExtra.push(`<div class="treceipt-block">${m.body}</div>`);
+  } else if (m.body) {
+    bodyExtra.unshift(`<div>${m.body}</div>`);
+  }
+  if (m.kind === 'triage') {
+    const g = m.aiGuess;
+    bodyExtra.push(`<div class="tai-stub-row">
+      <button type="button" class="confirm" data-tai-confirm="${m.id}">
+        [confirm]${g.confirmed === true ? ' ✓' : ''} <span class="fake">does nothing yet</span></button>
+      <button type="button" data-tai-reground="${m.id}">
+        [re-ground]${g.confirmed === false ? ' ✗ requested' : ''} <span class="fake">does nothing yet</span></button>
+    </div>`);
+  }
+  const kindTag = { capture:'capture — original', comment:'comment', triage:'AI triage guess', receipt:'work receipt' }[m.kind];
+  const mine = tIsMine(t, m.laid_by);
+  return `<div class="tmsg kind-${m.kind} ${mine ? 'mine' : ''}" data-tmsg="${m.id}">
+    <div class="tmsg-head" data-tmsg-toggle="${m.id}">
+      <div class="tmsg-avatar">${tAvatarLetter(m.laid_by)}</div>
+      <div class="tmsg-from mono">${m.laid_by}${mine ? ' <span class="fake">(you)</span>' : ''}</div>
+      <span class="tmsg-kind-tag">${S.showBuckets ? kindTag : ''}</span>
+      <div class="tmsg-when mono">${m.when}</div>
+      <button type="button" class="treply-to-btn" data-treply-to="${m.id}" title="quote this message in your reply">reply-to</button>
+    </div>
+    <div class="tmsg-body">${bodyExtra.join('')}</div>
+  </div>`;
+}
+function ThreadHeader(t) {
+  return `<div class="tsubject-header">
+    <div class="subject-line">${t.subject}</div>
+    <div class="meta-row">
+      <span class="mono">${t.requester}</span>
+      <span class="course-chip">${t.course}</span>
+      <span class="status-chip ${t.done ? 'done' : ''}">${t.done ? 'done' : 'open'}</span>
+      <span class="related-stub">[related threads] <span class="fake">— unmodeled, fork 3</span></span>
+    </div>
+  </div>`;
+}
+function ThreadModeBody(t) {
+  const msgs = t.threadMsgs || [];
+  const vis = msgs.filter(m => {
+    if (m.kind === 'sysline' && !S.showSystemLines) return false;
+    if (m.kind === 'receipt' && !S.showReceipts) return false;
+    return true;
+  });
+  const open = !!S.stackOpen[t.id];
+  let html = '';
+  if (vis.length > STACK_THRESHOLD && !open) {
+    const hidden = vis.slice(0, vis.length - STACK_THRESHOLD);
+    const shown = vis.slice(vis.length - STACK_THRESHOLD);
+    html += `<div class="tcollapsed-stack" data-tstack-toggle="${t.id}"><span>▸</span>
+      <span class="stack-count">${hidden.length}</span> earlier message${hidden.length === 1 ? '' : 's'} collapsed
+      <span class="fake">(click to expand)</span></div>`;
+    html += shown.map(m => TMessageBlock(t, m)).join('');
+  } else {
+    if (vis.length > STACK_THRESHOLD) {
+      html += `<div class="tcollapsed-stack" data-tstack-toggle="${t.id}"><span>▾</span> collapse earlier messages</div>`;
+    }
+    html += vis.map(m => TMessageBlock(t, m)).join('');
+  }
+  const qd = S.quoteDraft[t.id];
+  const qsrc = qd ? msgs.find(m => m.id === qd) : null;
+  const quoteRefHtml = qd
+    ? `<div class="tquote-ref mono">quoting ${qsrc ? qsrc.laid_by + ' · ' + qsrc.when : qd}
+        <button type="button" data-tclear-quote="${t.id}">clear</button></div>`
+    : '';
+  return `
+    <div class="mode-bar">${ModeToggleHtml()}</div>
+    ${ThreadHeader(t)}
+    <div id="threadBody">${html}</div>
+    <div class="tcomposer">
+      <div class="tcomposer-label">Reply <span class="now-here">— Now lives at the bottom of a conversation</span>
+        <span class="fake">[does nothing yet]</span></div>
+      <div id="quoteRefSlot">${quoteRefHtml}</div>
+      <div class="tcompose-row">
+        <input type="text" class="thread-compose" placeholder="reply to this thread…" data-thread-input="${t.id}">
+        <button type="button" class="thread-submit" data-thread-submit="${t.id}">reply <span class="fake">[does nothing yet]</span></button>
+      </div>
+    </div>
+    <div class="controls" style="margin-top:.8rem">
+      <label><input type="checkbox" id="showSystemLines" ${S.showSystemLines ? 'checked' : ''}> show system lines <span class="fork-note">(fork 1)</span></label>
+      <label><input type="checkbox" id="showReceipts" ${S.showReceipts ? 'checked' : ''}> show work receipts <span class="fork-note">(fork 1)</span></label>
+    </div>`;
+}
+function ModeToggleHtml() {
+  return `<div class="mode-toggle">
+      <button type="button" data-mode="card" class="${S.detailMode === 'card' ? 'active' : ''}">card</button>
+      <button type="button" data-mode="thread" class="${S.detailMode === 'thread' ? 'active' : ''}">thread</button>
+    </div>
+    <span class="fork-note">vantage on the same selected ticket</span>
+    <div class="chirality-toggle mono">viewing as:
+      <select id="viewingAs">
+        <option value="support" ${S.viewingAs === 'support' ? 'selected' : ''}>support</option>
+        <option value="requester" ${S.viewingAs === 'requester' ? 'selected' : ''}>requester</option>
+      </select>
+      <span class="fake">[cheat-toggle]</span>
+    </div>`;
+}
+
 function DetailCard(t) {
   const interiorOpen = !!S.interiorOpen[t.id];
-  return `<div class="detail-card-slot" data-card-slot="${t.id}">
+  return `<div class="mode-bar">${ModeToggleHtml()}</div>
+  <div class="detail-card-slot" data-card-slot="${t.id}">
     ${DrawerBlock(t, 'future')}
     <div class="card" data-card="${t.id}">
       <div class="tab-hitzone tl future" data-tab="${t.id}:future"><div class="tab-paint">⇡ future</div></div>
@@ -420,8 +718,11 @@ function DetailCard(t) {
   </div>`;
 }
 function renderDetail() {
+  const pane = document.getElementById('pane-detail');
   const t = TICKETS.find(x => x.id === S.selected);
-  document.getElementById('pane-detail').innerHTML = t ? DetailCard(t)
+  pane.classList.toggle('mode-thread', S.detailMode === 'thread');
+  pane.innerHTML = t
+    ? (S.detailMode === 'thread' ? ThreadModeBody(t) : DetailCard(t))
     : `<div class="detail-empty">select a ticket on the ${S.flipped ? 'right' : 'left'} <span class="fake">[does nothing yet without one]</span></div>`;
 }
 function renderAll() { renderList(); renderDetail(); }
@@ -454,6 +755,42 @@ document.getElementById('pane-detail').addEventListener('click', e => {
   const sectionToggle = e.target.closest('[data-section-toggle]');
   const aiChip = e.target.closest('[data-ai-confirm]');
   const threadSubmit = e.target.closest('[data-thread-submit]');
+  // HYBRID: mode toggle + chirality cheat-toggle (both modes' mode-bar share these)
+  const modeBtn = e.target.closest('[data-mode]');
+  if (modeBtn) { S.detailMode = modeBtn.dataset.mode; renderDetail(); return; }
+  // HYBRID: thread-mode-only handlers
+  const tStackToggle = e.target.closest('[data-tstack-toggle]');
+  const tReplyTo = e.target.closest('[data-treply-to]');
+  const tAiConfirm = e.target.closest('[data-tai-confirm]');
+  const tAiReground = e.target.closest('[data-tai-reground]');
+  const tClearQuote = e.target.closest('[data-tclear-quote]');
+  if (tStackToggle) { const id = tStackToggle.dataset.tstackToggle; S.stackOpen[id] = !S.stackOpen[id]; renderDetail(); return; }
+  if (tReplyTo) {
+    const id = tReplyTo.dataset.treplyTo;
+    const t = TICKETS.find(x => x.id === S.selected);
+    if (t) S.quoteDraft[t.id] = id;
+    renderDetail();
+    const input = document.querySelector(`[data-thread-input="${S.selected}"]`);
+    if (input) input.focus();
+    return;
+  }
+  if (tAiConfirm) {
+    const t = TICKETS.find(x => x.id === S.selected);
+    const m = t && t.threadMsgs.find(x => x.id === tAiConfirm.dataset.taiConfirm);
+    if (m && m.aiGuess) { m.aiGuess.confirmed = m.aiGuess.confirmed === true ? null : true; }
+    console.log('[muslin] thread AI triage confirm toggled [does nothing yet]', m && m.aiGuess);
+    renderDetail();
+    return;
+  }
+  if (tAiReground) {
+    const t = TICKETS.find(x => x.id === S.selected);
+    const m = t && t.threadMsgs.find(x => x.id === tAiReground.dataset.taiReground);
+    if (m && m.aiGuess) { m.aiGuess.confirmed = m.aiGuess.confirmed === false ? null : false; }
+    console.log('[muslin] thread AI triage re-ground requested [does nothing yet]', m && m.aiGuess);
+    renderDetail();
+    return;
+  }
+  if (tClearQuote) { const id = tClearQuote.dataset.tclearQuote; delete S.quoteDraft[id]; renderDetail(); return; }
   if (aiChip) {
     const t = TICKETS.find(x => x.id === aiChip.dataset.aiConfirm);
     if (t && t.aiGuess) { t.aiGuess.confirmed = t.aiGuess.confirmed === true ? null : true; }
@@ -470,10 +807,33 @@ document.getElementById('pane-detail').addEventListener('click', e => {
     if (!val) return;
     console.log('[muslin] reply submit [does nothing yet]', id, val);
     const t = TICKETS.find(x => x.id === id);
-    if (t) t.thread.push({ who:'frame-support-you', when:'now', text: val });
+    if (t) {
+      t.thread.push({ who:'frame-support-you', when:'now', text: val });
+      if (t.threadMsgs) {
+        const newMsg = { id: t.id + 'm' + (t.threadMsgs.length + 1), kind:'comment',
+          laid_by: S.viewingAs === 'support' ? 'frame-support-you' : t.requester, when:'now', body: val };
+        if (S.quoteDraft[t.id]) newMsg.quotes = S.quoteDraft[t.id];
+        t.threadMsgs.push(newMsg);
+        delete S.quoteDraft[t.id];
+      }
+    }
     if (input) input.value = '';
     renderDetail();
     return;
+  }
+});
+// delegated change events for thread-mode-only checkboxes/select (re-rendered each time,
+// so plain top-level listeners on ids would go stale — delegate on the pane instead)
+document.getElementById('pane-detail').addEventListener('change', e => {
+  if (e.target.id === 'showSystemLines') { S.showSystemLines = e.target.checked; renderDetail(); }
+  else if (e.target.id === 'showReceipts') { S.showReceipts = e.target.checked; renderDetail(); }
+  else if (e.target.id === 'viewingAs') { S.viewingAs = e.target.value; renderDetail(); }
+});
+document.getElementById('pane-detail').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('[data-thread-input]')) {
+    const id = e.target.dataset.threadInput;
+    const btn = document.querySelector(`[data-thread-submit="${id}"]`);
+    if (btn) btn.click();
   }
 });
 
