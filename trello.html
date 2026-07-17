@@ -1,0 +1,342 @@
+<!-- MUSLIN — NOT REAL. Built 2026-07-17 to answer ONE question: what do kanban
+     columns MEAN in a tense-native graph, and does drag-between-columns survive
+     contact with the metaphysics? See docs/muslins/trello-style-muslin/NOTES.md
+     for the full A/B fork, the straddler problem, and what to try breaking.
+
+     Standing law this stages under: Hallie ruled the three-column view
+     "interesting for kanban... we've recreated the perfect and imperfect
+     tenses... it's great for the kanban view, terrible for the list" (render-
+     redesign committee), and sprints eventually show "EVENTS in the sprint in
+     doneness columns, separated out into users." Two readings of what a
+     COLUMN even is get staged SIDE BY SIDE, labeled, never merged: variant A
+     reads columns as TENSES (Future/Present/Past relative to the viewing
+     story's Now), variant B reads columns as STORIES/LANES (one per story or
+     user). Cheap cotton: hardcoded fake data, [does nothing yet] stubs,
+     pointer events only (never HTML5 DnD — house law), seams left showing on
+     purpose. Palette borrowed loosely from pull-tab-anatomy-muslin.html; not
+     its framework. -->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>[MUSLIN] trello/kanban-style projection</title>
+<style>
+  body { font-family: 'Hanken Grotesk', Arial, sans-serif; background:#faf8f3; color:#23291f; margin:0; padding:1.6rem; }
+  h1 { font-family: Georgia, 'Source Serif 4', serif; font-size:1.5rem; margin:0 0 .2rem; }
+  h2 { font-family: Georgia, 'Source Serif 4', serif; font-size:1.05rem; margin:2.2rem 0 .3rem; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .banner { background: repeating-linear-gradient(45deg,#ffe08a,#ffe08a 12px,#fff3c4 12px,#fff3c4 24px);
+    border: 2px dashed #b08900; padding: .6rem 1rem; margin-bottom: 1.2rem; font-weight: bold; font-size:.85rem; }
+  .question { font-size:.95rem; background:#fff; border:1.5px dashed #999; padding:.7rem 1rem; margin-bottom:1.4rem; }
+  .fork-label { display:inline-block; font-family:ui-monospace,monospace; font-size:.68rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; color:#8a6d12; background:#fff3c4;
+    border:1.5px dashed #b08900; padding:.25rem .6rem; margin-bottom:.6rem; }
+  .fake { color:#aaa; font-size:.7em; font-family: ui-monospace, monospace; }
+
+  /* ===== sprint header ===== */
+  .sprint-header { max-width:1400px; margin:0 auto 1.4rem; background:#fff; border:2px solid #23291f;
+    padding:.8rem 1.1rem; box-shadow:3px 3px 0 #23291f18; }
+  .sprint-header .name { font-family:Georgia,'Source Serif 4',serif; font-size:1.15rem; font-weight:700; }
+  .sprint-header .stars { font-size:.8rem; margin-top:.25rem; color:#6b6f66; }
+  .sprint-header .stars .star { display:inline-block; margin-right:.9rem; }
+
+  /* ===== A/B fork wrapper — side by side, this IS the muslin's central move ===== */
+  .fork-wrap { max-width:1400px; margin:0 auto; }
+  .board-block { margin-bottom:2.4rem; }
+  .board-block-label { font-family:ui-monospace,monospace; font-size:.72rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; color:#8a6d12; background:#fff3c4;
+    border:1.5px dashed #b08900; padding:.35rem .7rem; margin-bottom:.7rem; display:inline-block; }
+  .board { display:flex; gap:1.1rem; align-items:flex-start; overflow-x:auto; padding-bottom:.5rem; }
+  .column { flex:1 1 300px; min-width:260px; max-width:360px; background:#f1efe8; border:2px solid #23291f;
+    border-radius:6px; display:flex; flex-direction:column; min-height:120px; }
+  .column-head { padding:.55rem .7rem; border-bottom:2px solid #23291f; font-family:ui-monospace,monospace;
+    font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; display:flex; align-items:center; gap:.4rem; }
+  .column.future .column-head { background:#dce8f7; color:#2c5da0; }
+  .column.present .column-head { background:#f1efe8; color:#23291f; border-bottom-style:dashed; }
+  .column.past .column-head { background:#f7ecd0; color:#8a6508; }
+  .column-count { margin-left:auto; opacity:.6; }
+  .column-body { padding:.6rem; display:flex; flex-direction:column; gap:.55rem; flex:1; min-height:80px; }
+  .column-body.drag-over { background:#fff7a1aa; outline:2px dashed #b08900; outline-offset:-2px; }
+  .column.present .column-body { border-left:3px dashed #999; border-right:3px dashed #999; margin:0 .1rem; }
+
+  /* lane columns (variant B) get a story-colored top bar instead of tense colors */
+  .column.lane .column-head { color:#fff; }
+  .column.lane.lane-0 .column-head { background:#4a7ec2; }
+  .column.lane.lane-1 .column-head { background:#c2723a; }
+  .column.lane.lane-2 .column-head { background:#6b8f4e; }
+  .column.lane.lane-3 .column-head { background:#8a5ea8; }
+
+  /* ===== collapsed card face — name only, register mark, kind chip ===== */
+  .kcard { background:#fff; border:1.5px solid #23291f; border-radius:5px; padding:.5rem .6rem;
+    font-size:.82rem; cursor:grab; box-shadow:2px 2px 0 #23291f14; display:flex; align-items:flex-start; gap:.4rem; }
+  .kcard:active { cursor:grabbing; }
+  .kcard.dragging { opacity:.35; }
+  .kcard .mark { min-width:20px; min-height:20px; display:flex; align-items:center; justify-content:center;
+    font-weight:700; border-radius:50%; border:2px solid #6b6f66; color:#6b6f66; font-size:.68rem; flex-shrink:0; }
+  .kcard .mark.done { border-color:#8a6508; color:#8a6508; background:#f7ecd0; }
+  .kcard .mark.open { border-color:#2c5da0; color:#2c5da0; }
+  .kcard .body { flex:1; }
+  .kcard .label { display:block; line-height:1.3; }
+  .kcard .chip { display:inline-block; font-size:.6rem; font-family:ui-monospace,monospace; border:1px solid currentColor;
+    padding:0 .35em; border-radius:3px; margin-top:.3rem; opacity:.75; }
+  .kcard.straddler { border:2px solid #23291f; background:linear-gradient(180deg,#dce8f7 0%,#dce8f7 46%,#f1efe8 46%,#f1efe8 54%,#f7ecd0 54%,#f7ecd0 100%); }
+  .kcard.straddler .straddle-note { display:block; font-size:.6rem; font-family:ui-monospace,monospace; color:#8a6d12;
+    margin-top:.35rem; font-style:italic; }
+  .kcard.empty-slot { opacity:.4; font-style:italic; border-style:dashed; cursor:default; }
+
+  /* drag-over glow on a card acting as a drop target boundary marker (question: does a card
+     itself ever need to BE a drop target, e.g. "drop onto this card to occlude its charge"?) */
+  .kcard.charge-target { outline:2px dashed #b08900; outline-offset:2px; }
+
+  /* ===== refusal dialog stub, honest wording per house style ===== */
+  .refusal-toast { position:fixed; bottom:1.4rem; right:1.4rem; max-width:340px; background:#fde;
+    border:2px dashed #c0392b; color:#8a1c1c; padding:.7rem .9rem; font-size:.82rem; border-radius:6px;
+    box-shadow:3px 3px 0 #0002; z-index:50; }
+  .refusal-toast .rt-title { font-weight:700; font-family:ui-monospace,monospace; font-size:.68rem;
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; }
+  .receipt-toast { position:fixed; bottom:1.4rem; right:1.4rem; max-width:340px; background:#eef7ea;
+    border:2px dashed #6b8f4e; color:#3a5528; padding:.7rem .9rem; font-size:.82rem; border-radius:6px;
+    box-shadow:3px 3px 0 #0002; z-index:50; }
+  .receipt-toast .rt-title { font-weight:700; font-family:ui-monospace,monospace; font-size:.68rem;
+    text-transform:uppercase; letter-spacing:.05em; margin-bottom:.3rem; color:#3a5528; }
+
+  .straddler-panel { max-width:1400px; margin:1.6rem auto 0; background:#fff; border:1.5px dashed #999;
+    padding:.8rem 1rem; font-size:.8rem; }
+  .straddler-panel h3 { margin:0 0 .4rem; font-size:.85rem; font-family:ui-monospace,monospace;
+    text-transform:uppercase; letter-spacing:.05em; color:#8a6d12; }
+
+  footer.notes { max-width:1400px; margin:2rem auto; font-size:.78rem; opacity:.75; line-height:1.5; }
+  code { background:#eee; padding:0 .25em; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="banner mono">MUSLIN / NOT REAL — kanban-style projection of a sprint. THE QUESTION: what do
+  kanban columns MEAN in a tense-native graph, and does drag-between-columns survive contact
+  with the metaphysics? Two readings of "column" staged side by side below — try dragging
+  cards in both boards, try to break each one, see docs/muslins/trello-style-muslin/NOTES.md.
+  Fake data (sprint-jul-14-25 shape). Pointer events only, never HTML5 DnD (house law).</div>
+
+<h1>Trello/kanban-style muslin <span class="fake">[fake data below, no backend]</span></h1>
+<div class="question mono">
+  Standing law this stages under (Hallie): "we've recreated the perfect and imperfect
+  tenses... it's great for the kanban view, terrible for the list" — and sprints eventually
+  show "EVENTS in the sprint in doneness columns, separated out into users." Both halves of
+  that sentence read as different column-semantics. This muslin stages BOTH, not merged.
+</div>
+
+<div class="sprint-header">
+  <div class="name">sprint-jul-14-25 <span class="fake">[fake]</span></div>
+  <div class="stars mono">
+    <span class="star">★ trello-style muslin ships legible fork</span>
+    <span class="star">★ drag semantics survive contact with tense metaphysics</span>
+    <span class="star">★ straddler problem named, not solved</span>
+  </div>
+</div>
+
+<div class="fork-wrap">
+
+  <!-- ================= VARIANT A: COLUMNS AS TENSES ================= -->
+  <div class="board-block">
+    <div class="board-block-label">FORK A — columns AS TENSES (Future / Present / Past, relative to the sprint's Now)</div>
+    <div class="board" id="boardA"></div>
+  </div>
+
+  <!-- ================= VARIANT B: COLUMNS AS STORIES/LANES ================= -->
+  <div class="board-block">
+    <div class="board-block-label">FORK B — columns AS STORIES/LANES (one column per story in the sprint)</div>
+    <div class="board" id="boardB"></div>
+  </div>
+
+</div>
+
+<div class="straddler-panel">
+  <h3>the straddler problem (variant A)</h3>
+  <p>One todo — <b>"wire pointer-drag ghost + drop receipt"</b> — is genuinely imperfective:
+  begun, not yet gathered by Now. In the pull-tab muslin's single-column read this lived as
+  a row ON the Now band, marked ◐. A kanban COLUMN can't do that — a card is in exactly one
+  column or it isn't. This muslin's best attempt: the card gets a <b>gradient face</b>
+  (blue→neutral→amber) and sits physically straddling the Present/Past column boundary
+  (see the board — it overlaps both column edges visually, with a dashed callout). That's a
+  layout hack, not a real answer. <b>Named fork:</b> does kanban need a real THIRD state per
+  card ("mid-transit," not a column at all, maybe a card that's rendered half in each
+  adjacent column's DOM), or is the imperfective simply the wrong grain for a board view —
+  i.e. maybe kanban is honest only for perfective/inceptive states and imperfective belongs
+  back in the list, full stop? Tear this apart.</p>
+</div>
+
+<footer class="notes mono">
+  seams left showing on purpose: drag is <code>[does nothing yet]</code> for the actual
+  write — console.log + a fake receipt/refusal toast only, no persistence. Collapsed-card
+  face only (name, register mark, kind chip) — no drawers, no interior, this muslin doesn't
+  restage the pull-tab anatomy. Pointer events only (never HTML5 DnD — house law).
+</footer>
+
+<script>
+/* ============================== FAKE DATA ============================== */
+/* sprint-jul-14-25 shape: a few stories, todos charged toward them, one imperfective straddler */
+const SPRINT = { id: 'sprint-jul-14-25', now: 'sprint-now' };
+
+const STORIES = [
+  { id: 's1', name: 'card anatomy reads as one grammar at every scale', color:'lane-0' },
+  { id: 's2', name: 'kanban projection survives contact with the metaphysics', color:'lane-1' },
+  { id: 's3', name: 'drawer + reconciliation muslins land in bujo proper', color:'lane-2' },
+];
+
+// register: 'todo' (open, •) or 'done' (✕/logged). kind chip: story|task|trub|perfect world.
+// tense: which TENSE COLUMN this card sits in for variant A, relative to sprint Now.
+// straddler: true for the one imperfective card.
+const TODOS = [
+  { id:'t1', story:'s1', label:'wire the pull-tab hit zones', register:'done', kind:'task', tense:'past' },
+  { id:'t2', story:'s1', label:'ship drag-over affordance', register:'todo', kind:'task', tense:'future' },
+  { id:'t3', story:'s1', label:'wire pointer-drag ghost + drop receipt', register:'todo', kind:'task', tense:'present', straddler:true },
+  { id:'t4', story:'s2', label:'stage tenses-as-columns (fork A)', register:'done', kind:'task', tense:'past' },
+  { id:'t5', story:'s2', label:'stage lanes-as-columns (fork B)', register:'todo', kind:'task', tense:'future' },
+  { id:'t6', story:'s2', label:'name the straddler problem in kanban', register:'todo', kind:'trub', tense:'future' },
+  { id:'t7', story:'s3', label:'drawer muslin reconciliation landed', register:'done', kind:'task', tense:'past' },
+  { id:'t8', story:'s3', label:'reconciliation muslin consensus write-up', register:'done', kind:'story', tense:'past' },
+  { id:'t9', story:'s3', label:'bujo dayview/cardview integration', register:'todo', kind:'task', tense:'future' },
+  { id:'t10', story:'s2', label:'refusal dialog for illegal un-gather', register:'todo', kind:'task', tense:'future' },
+];
+
+/* ============================== STATE ============================== */
+const S = { dragging:null, dragOverA:null, dragOverB:null };
+
+function Chip(kind) { return `<span class="chip">${kind}</span>`; }
+
+function KCard(t) {
+  const markClass = t.register === 'done' ? 'done' : 'open';
+  const markGlyph = t.register === 'done' ? '✓' : '•';
+  const straddleNote = t.straddler
+    ? `<span class="straddle-note">[straddler — begun, not yet gathered by Now. see panel below]</span>`
+    : '';
+  return `<div class="kcard ${t.straddler ? 'straddler' : ''}" draggable-fake="1" data-todo="${t.id}" title="drag me (does nothing yet)">
+    <span class="mark ${markClass} mono">${markGlyph}</span>
+    <span class="body">
+      <span class="label">${t.label} <span class="fake">[fake]</span></span>
+      ${Chip(t.kind)}
+      ${straddleNote}
+    </span>
+  </div>`;
+}
+
+/* ============================== VARIANT A: TENSES ============================== */
+function renderBoardA() {
+  const tenses = [
+    { key:'future', label:'⇡ Future', title:'not yet gathered by Now — ungathered' },
+    { key:'present', label:'● Present', title:'the hinge — imperfective straddlers live here' },
+    { key:'past', label:'✓ Past', title:'gathered THROUGH THE DOOR by the sprint’s Now' },
+  ];
+  const html = tenses.map(tn => {
+    const items = TODOS.filter(t => t.tense === tn.key);
+    const isOver = S.dragOverA === tn.key;
+    return `<div class="column ${tn.key}">
+      <div class="column-head">${tn.label} <span class="column-count mono">${items.length}</span></div>
+      <div class="column-body ${isOver ? 'drag-over' : ''}" data-col-a="${tn.key}" title="${tn.title}">
+        ${items.map(KCard).join('') || '<div class="kcard empty-slot">(empty — fake)</div>'}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('boardA').innerHTML = html;
+}
+
+/* ============================== VARIANT B: STORIES/LANES ============================== */
+function renderBoardB() {
+  const html = STORIES.map((story, i) => {
+    const items = TODOS.filter(t => t.story === story.id);
+    const isOver = S.dragOverB === story.id;
+    return `<div class="column lane ${story.color}">
+      <div class="column-head">${story.name} <span class="column-count mono">${items.length}</span></div>
+      <div class="column-body ${isOver ? 'drag-over' : ''}" data-col-b="${story.id}" title="charged toward: ${story.name}">
+        ${items.map(KCard).join('') || '<div class="kcard empty-slot">(nothing charged yet — fake)</div>'}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('boardB').innerHTML = html;
+}
+
+function render() { renderBoardA(); renderBoardB(); }
+render();
+
+/* ======================= FAKE DRAG (pointer events only, house law) ======================= */
+function toast(kind, title, body) {
+  document.querySelectorAll('.refusal-toast,.receipt-toast').forEach(n => n.remove());
+  const el = document.createElement('div');
+  el.className = kind === 'refusal' ? 'refusal-toast' : 'receipt-toast';
+  el.innerHTML = `<div class="rt-title">${title}</div><div>${body}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3600);
+}
+
+let dragId = null, dragBoard = null;
+
+document.addEventListener('pointerdown', e => {
+  const card = e.target.closest('.kcard[data-todo]');
+  if (!card) return;
+  dragId = card.dataset.todo;
+  dragBoard = card.closest('#boardA') ? 'A' : (card.closest('#boardB') ? 'B' : null);
+  card.classList.add('dragging');
+});
+
+document.addEventListener('pointermove', e => {
+  if (!dragId) return;
+  const overColA = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-col-a]');
+  const overColB = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-col-b]');
+  const newA = overColA ? overColA.dataset.colA : null;
+  const newB = overColB ? overColB.dataset.colB : null;
+  if (S.dragOverA !== newA || S.dragOverB !== newB) {
+    S.dragOverA = newA; S.dragOverB = newB;
+    render();
+    document.querySelector(`.kcard[data-todo="${dragId}"]`)?.classList.add('dragging');
+  }
+});
+
+document.addEventListener('pointerup', e => {
+  if (!dragId) return;
+  const todo = TODOS.find(t => t.id === dragId);
+  const dropColA = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-col-a]');
+  const dropColB = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-col-b]');
+
+  if (dropColA && todo) {
+    const targetTense = dropColA.dataset.colA;
+    if (targetTense !== todo.tense) {
+      // FORK A semantics: drag rightward into Past = marking done THROUGH THE DOOR
+      // (gathered by the Now). Drag leftward into Future = un-gathering.
+      const order = { future:0, present:1, past:2 };
+      const forward = order[targetTense] > order[todo.tense];
+      if (targetTense === 'past') {
+        console.log('[muslin fake write] mark_done via drag-into-past', todo.id);
+        toast('receipt', 'gathered through the door', `"${todo.label}" moved into Past — marked done, gathered by the sprint's Now. <span class="fake">[does nothing yet — no real write]</span>`);
+        todo.tense = 'past';
+      } else if (targetTense === 'future' && !forward) {
+        // mirror of the honest refusal: un-gathering a past (perfective) item into
+        // the future is currently not supported — the drag-into-past blocker's mirror.
+        console.log('[muslin fake refusal] un-gather blocked', todo.id);
+        toast('refusal', 'refused', `Putting past events in the future currently not supported.`);
+      } else {
+        console.log('[muslin fake write] tense reassigned via drag', todo.id, '->', targetTense);
+        toast('receipt', 'moved', `"${todo.label}" moved to ${targetTense}. <span class="fake">[does nothing yet]</span>`);
+        todo.tense = targetTense;
+      }
+    }
+  } else if (dropColB && todo) {
+    const targetStory = dropColB.dataset.colB;
+    if (targetStory !== todo.story) {
+      // FORK B semantics: drag between lanes = re-steering — occlude the old charge,
+      // lay a new one. Receipts visible (fake here).
+      const oldStory = STORIES.find(s => s.id === todo.story);
+      const newStory = STORIES.find(s => s.id === targetStory);
+      console.log('[muslin fake write] re-steer: occlude charge on', oldStory.id, 'lay charge on', newStory.id, todo.id);
+      toast('receipt', 're-steered', `"${todo.label}" re-charged: occluded from "${oldStory.name}", laid toward "${newStory.name}". <span class="fake">[does nothing yet — no real occlusion/lay]</span>`);
+      todo.story = targetStory;
+    }
+  }
+
+  dragId = null; dragBoard = null;
+  S.dragOverA = null; S.dragOverB = null;
+  render();
+});
+</script>
+
+</body>
+</html>

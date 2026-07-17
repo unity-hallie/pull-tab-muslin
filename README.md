@@ -13,3 +13,4 @@ not oversights. Rulings-so-far live in NOTES.md.
 - [`index.html`](index.html) — pull-tab card anatomy (file-folder tabs, two-zone poles, drop-opens-pinned)
 - [`chat.html`](chat.html) — chat-style projection (can the graph read as a chat? messages laid_by sovereign frames, doneness as strikethrough, the coordination-ruling exchange)
 - [`email.html`](email.html) — email-client-style master-detail projection for ticket handling (ticket list + the pull-tab card anatomy reused verbatim as the detail pane, swappable panes, compose-at-the-Now comment thread)
+- [`trello.html`](trello.html) — trello/kanban-style projection (what do kanban columns MEAN in a tense-native graph? Fork A: columns as tenses (Future/Present/Past); Fork B: columns as story/user lanes; the imperfective straddler problem)
