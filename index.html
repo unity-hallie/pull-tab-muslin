@@ -58,6 +58,22 @@
      reserved space above the first card-slot's exterior future-drawer sibling */
   .list { max-width: 640px; margin: 0 auto; padding: 2rem 0; }
 
+  /* ===== STAGE 5: A/B pair, card-bottom vs Now-band composer (2026-07-17
+     afternoon round) — Hallie's development: open-to-compose RULED (a card
+     must be OPEN to be composed into), and the placement question re-sharpened
+     as "you compose at the Now, and each view's geometry decides where the Now
+     lives" — bottom-compose is CHAT/reply grammar, a TODO interior's future is
+     at the TOP, so the Now-band-as-composer is now a live contender alongside
+     card-bottom. Two variants shown side by side so Hallie's hand compares in
+     one glance. This wrapper breaks the single-column .list open just for the
+     AB pair — everything else in the muslin stays single column. ===== */
+  .ab-wrap { max-width: 1360px; margin: 0 auto; padding: 0 0 1rem; }
+  .ab-row { display:flex; gap:2rem; align-items:flex-start; flex-wrap:wrap; }
+  .ab-col { flex:1 1 620px; min-width:340px; }
+  .ab-cotton-label { font-family:ui-monospace,monospace; font-size:.68rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:.06em; color:#8a6d12; background:#fff3c4;
+    border:1.5px dashed #b08900; padding:.3rem .6rem; margin-bottom:.6rem; display:inline-block; }
+
   /* ===== card shell ===== */
   /* margin-top/bottom widened so protruding folder tabs (24px stick-out) never collide
      with the previous/next card — the tabs need clearance to break the silhouette */
@@ -308,6 +324,36 @@
      real write underneath it. */
   @keyframes landingPulse { 0% { box-shadow:0 0 0 0 #fff7a1cc; } 100% { box-shadow:0 0 0 8px #fff7a100; } }
   .irow.landing-highlight { animation: landingPulse .9s ease-out 2; border-color:#b08900; }
+
+  /* ===== VARIANT B: the Now band AS the compose surface (staged 2026-07-17
+     afternoon, Hallie's development) — "you compose at the Now, and each
+     view's geometry decides where the Now lives." The band between Present
+     and Past renders as the compose surface itself: name field IN the band,
+     register chips adjacent, content unfolds in place below the band. Same
+     fake submit + landing pulse as variant A, but pulse direction is now
+     geometry-teaching: TODO pulses interior-future ABOVE the band, LOGGED
+     pulses interior-past BELOW it — up = future, down = past, taught by the
+     band's own position in the stack, not just a color convention. ===== */
+  .now-line.now-compose { flex-wrap:wrap; padding:.5rem .6rem .6rem; cursor:default; }
+  .now-line.now-compose .now-compose-row { display:flex; align-items:center; gap:.5rem; width:100%; margin-top:.3rem; }
+  .now-line.now-compose .now-label { font-weight:700; letter-spacing:.1em; }
+  .now-line.now-compose .capture-register-chips { margin:0 0 0 .4rem; }
+  .now-line.now-compose .capture-name { flex:1; font-size:.8rem; padding:.3rem .5rem;
+    border:1.5px solid #23291f; border-radius:4px; font-family:'Hanken Grotesk',Arial,sans-serif;
+    text-transform:none; letter-spacing:normal; font-weight:400; }
+  .now-line.now-compose .capture-submit { font-size:.72rem; padding:.3rem .7rem; border:1.5px solid #23291f;
+    border-radius:4px; background:#fff; cursor:pointer; font-weight:600; text-transform:none; letter-spacing:normal; }
+  .now-line.now-compose .capture-submit:hover { background:#ffe08a; }
+  .now-line.now-compose .capture-content-fold { width:100%; max-height:0; overflow:hidden; transition:max-height .15s ease-out; }
+  .now-line.now-compose .capture-content-fold.unfolded { max-height:100px; margin-top:.35rem; }
+  .now-line.now-compose .capture-content-fold.instant { transition:none; }
+  .now-line.now-compose .capture-content { width:100%; box-sizing:border-box; font-size:.78rem; padding:.35rem .5rem;
+    border:1.5px solid #23291f; border-radius:4px; resize:none; font-family:'Hanken Grotesk',Arial,sans-serif;
+    text-transform:none; letter-spacing:normal; font-weight:400; }
+  /* geometry teaching itself: a faint directional cue riding the band, arrow
+     toward whichever zone the active register chip will mint into */
+  .now-compose-hint { font-size:.58rem; font-weight:400; text-transform:none; letter-spacing:0; color:#6b6f66;
+    font-style:italic; margin-left:auto; font-family:ui-monospace,monospace; }
 </style>
 </head>
 <body>
@@ -342,7 +388,18 @@
   visual bridge between "minted here" and "landed there." See
   docs/committees/2026-07-17-capture-composer-muslin-dialogue.md for the full exchange,
   including a named holdout (capture-composer's private reservation that card-bottom is
-  merely not-yet-wrong, not proven right — Hallie's hand rules).</div>
+  merely not-yet-wrong, not proven right — Hallie's hand rules).
+  <br><b>2026-07-17 afternoon — STAGE 5, A/B pair (Hallie's development, 13:15–13:17):</b>
+  (1) RULED: a card must be OPEN to be composed into — composing = writing into the
+  interior; the day card is always open, so day-capture never disappears (the fractal
+  law's free lunch). (2) The placement question sharpened: bottom-compose is CHAT/reply
+  grammar (a conversation's Now lives at its bottom); a TODO interior's future is at the
+  TOP, so the law is "you compose at the Now, and each view's geometry decides where the
+  Now lives." Two variants now stand side by side below for comparison: <b>[variant A:
+  card-bottom]</b> (unchanged from the converged dialogue position) and <b>[variant B:
+  the Now band]</b> (new — the composer as the Now band's own living content, TODO mints
+  upward into the future section above, LOGGED mints downward into the past section
+  below). Neither is ruled yet — Hallie's hand decides. Cotton labels are muslin-only.</div>
 
 <h1>Pull-tab anatomy <span class="fake">[fake data below, no backend]</span></h1>
 
@@ -413,11 +470,11 @@ const CARDS = [
     draggable: true,
   },
   {
-    // STAGE (dialogue 2026-07-17): capture-composer × muslin converged position —
-    // card-bottom / card-face, UNMOVED from cards.ts's buildCardCapture today.
-    // interiorOpen defaults true here so the destination zones (interior-future /
-    // interior-past) are visible without an extra click, for staging purposes only.
-    id: 'c4', mark: '•', label: 'STAGE: capture composer in the anatomy (card-bottom)', emoji: '', tabWidth: 'wide',
+    // STAGE 5, VARIANT A (dialogue 2026-07-17): capture-composer × muslin converged
+    // position — card-bottom / card-face, UNMOVED from cards.ts's buildCardCapture
+    // today. interiorOpen defaults true here so the destination zones (interior-future
+    // / interior-past) are visible without an extra click, for staging purposes only.
+    id: 'c4a', mark: '•', label: 'STAGE [variant A: card-bottom]', emoji: '', tabWidth: 'wide',
     future: [], past: [],
     interior: {
       future: [ { text:'(a fresh TODO capture lands here)', straddler:false } ],
@@ -427,15 +484,31 @@ const CARDS = [
     filterable: false,
     stageCapture: true,
   },
+  {
+    // STAGE 5, VARIANT B (Hallie's development, 2026-07-17 afternoon): the composer
+    // AS the Now band's own living content. "You compose at the Now, and each view's
+    // geometry decides where the Now lives" — chat's Now is at the bottom (reply
+    // grammar), a TODO interior's Now mints upward into future, sinks downward into
+    // past. Same fake data/interior shape as variant A for a fair side-by-side.
+    id: 'c4b', mark: '•', label: 'STAGE [variant B: the Now band]', emoji: '', tabWidth: 'wide',
+    future: [], past: [],
+    interior: {
+      future: [ { text:'(a fresh TODO capture mints here — above)', straddler:false } ],
+      present: [],
+      past: [ { text:'(a fresh LOGGED/DONE capture sinks here — below)', bornFuture:false } ],
+    },
+    filterable: false,
+    nowBandCapture: true,
+  },
 ];
 
 /* ============================== STATE ============================== */
 const S = {
   drawerOpen: {},      // "id:kind" -> bool, PULLING the EXTERIOR drawer (independent of interior)
-  // "id" -> bool, the middle EXPAND tab (interior as a whole). c4 (the STAGE
-  // card) defaults open so the capture composer's landing zones are visible
+  // "id" -> bool, the middle EXPAND tab (interior as a whole). c4a/c4b (the
+  // STAGE 5 A/B pair) default open so the composer's landing zones are visible
   // without an extra click — staging-only default, not a behavior change.
-  interiorOpen: { c4: true },
+  interiorOpen: { c4a: true, c4b: true },
   sectionCollapsed: {},// "id:future|past" -> bool, per-section collapse toggle INSIDE the interior
   dragOverTarget: null,
   filterOn: false,
@@ -591,7 +664,7 @@ function InteriorBlock(card) {
       </div>
       <div class="isection-label present">Present <span class="bucket-label">[above the line — begun, not yet gathered by Now]</span></div>
       ${presentRows}
-      <div class="now-line">NOW <span style="font-weight:400;text-transform:none;letter-spacing:0">— gathers what lies below it, not what lies above</span></div>
+      ${card.nowBandCapture ? StageNowBandCapture(card) : `<div class="now-line">NOW <span style="font-weight:400;text-transform:none;letter-spacing:0">— gathers what lies below it, not what lies above</span></div>`}
       <div class="isection past-section ${pastCollapsed ? 'collapsed' : ''}" data-section="${card.id}:past">
         <div class="isection-header" data-section-toggle="${card.id}:past">
           <span class="caret">▾</span><span>Interior Done / Past — just inside the bottom</span>
@@ -621,6 +694,34 @@ function StageCapture(card) {
     </div>
     <div class="capture-composer-row">
       <input type="text" class="capture-name" placeholder="capture…" data-stage-name="${card.id}" aria-label="capture a new event">
+      <button type="button" class="capture-submit" data-stage-submit="${card.id}">capture</button>
+    </div>
+    <div class="capture-content-fold ${unfolded ? 'unfolded' : ''}">
+      <textarea class="capture-content" rows="2" placeholder="details… (optional)" data-stage-content="${card.id}"></textarea>
+    </div>
+  </div>`;
+}
+
+// STAGE 5, VARIANT B (Hallie's development, 2026-07-17 afternoon) — the composer
+// AS the Now band's own living content, not a separate block below it. Same
+// register-chip / name-field / unfold-content grammar as StageCapture, but laid
+// out INLINE inside the .now-line band itself: "you compose at the Now, and each
+// view's geometry decides where the Now lives." A directional hint rides the
+// band, naming which zone the active register will mint into — the geometry
+// teaching itself before the pulse ever fires.
+function StageNowBandCapture(card) {
+  const mode = S.captureRegister[card.id] || 'todo';
+  const unfolded = !!S.captureUnfolded[card.id];
+  const hint = mode === 'done' ? '↓ sinks into Past, below' : '↑ mints into Future, above';
+  return `<div class="now-line now-compose" data-stage-capture="${card.id}">
+    <span class="now-label">NOW</span>
+    <span class="now-compose-hint">${hint} <span class="bucket-label" style="text-transform:none;letter-spacing:0">[does nothing yet]</span></span>
+    <div class="now-compose-row">
+      <div class="capture-register-chips">
+        <button type="button" class="capture-register-chip capture-register-chip-todo ${mode === 'todo' ? 'active' : ''}" data-stage-register="${card.id}:todo">• todo</button>
+        <button type="button" class="capture-register-chip capture-register-chip-done ${mode === 'done' ? 'active' : ''}" data-stage-register="${card.id}:done">✕ logged / done</button>
+      </div>
+      <input type="text" class="capture-name" placeholder="compose at the Now…" data-stage-name="${card.id}" aria-label="capture a new event, from the Now band">
       <button type="button" class="capture-submit" data-stage-submit="${card.id}">capture</button>
     </div>
     <div class="capture-content-fold ${unfolded ? 'unfolded' : ''}">
@@ -662,8 +763,25 @@ function CardEl(card) {
 
 /* ============================== RENDER ============================== */
 const list = document.getElementById('list');
+// STAGE 5: the A/B pair (c4a/c4b) renders in its own side-by-side wrapper,
+// pulled out of the normal single-column .list flow so Hallie's hand can
+// compare both in one glance; all other cards render in the normal list.
 function render() {
-  list.innerHTML = CARDS.map(CardEl).join('');
+  const abCards = CARDS.filter(c => c.id === 'c4a' || c.id === 'c4b');
+  const normalCards = CARDS.filter(c => c.id !== 'c4a' && c.id !== 'c4b');
+  const abHtml = `<div class="ab-wrap">
+    <div class="ab-row">
+      <div class="ab-col">
+        <div class="ab-cotton-label">[variant A: card-bottom]</div>
+        ${CardEl(abCards[0])}
+      </div>
+      <div class="ab-col">
+        <div class="ab-cotton-label">[variant B: the Now band]</div>
+        ${CardEl(abCards[1])}
+      </div>
+    </div>
+  </div>`;
+  list.innerHTML = normalCards.map(CardEl).join('') + abHtml;
 }
 
 /* ======================= SYSTEM: clicks (click grammar, question 2) ======================= */

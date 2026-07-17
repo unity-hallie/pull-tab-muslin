@@ -444,3 +444,58 @@ the [after/outside]-style bucket labels, debug hit-zone outlines, width captions
 [does nothing yet] stubs, the banner. NONE of it ships. The real build carries the
 anatomy silently; the seams were for finding the shape, and the shape is found. (A
 muslin that survives into production was never a muslin — this one perishes into spec.)
+
+## Question 8 continued — Hallie's afternoon development (2026-07-17 13:15–13:17), A/B staged
+
+Two more moves, recorded verbatim because they change what the muslin is testing:
+
+1. **RULED: a card must be OPEN to be composed into.** Composing = writing into the
+   interior, and the interior only exists once a card is open. This isn't a new
+   restriction to route around — it falls out cleanly because the day card is
+   *always* open, so day-capture never disappears. Hallie's words: "the fractal
+   law's free lunch." No gating logic needs inventing; the ontology already covers it.
+2. **The placement question re-sharpened, not re-opened from scratch.** Her own
+   words: "compose at the bottom to reply is right... but for a TODO view?"
+   Bottom-compose is **CHAT / reply grammar** — a conversation's Now lives at its
+   bottom, so replying at the bottom is correct there. But a TODO interior's future
+   lives at the **top** (per the already-ruled Future → Present → NOW → Past order,
+   10:08 ontology ruling). So the general law is: **"you compose at the Now, and each
+   view's geometry decides where the Now lives."** Card-bottom isn't wrong for chat;
+   it may simply be the wrong geometry for a TODO-shaped interior. This reopens
+   Light 1's holdout above (card-bottom is "not obviously right just because it's
+   not-yet-wrong") as a live, stageable fork rather than settling it.
+
+**Staged in the muslin**, `pull-tab-anatomy-muslin.html`: card 4 became an A/B pair,
+side by side (`.ab-wrap`/`.ab-row`, falls back to stacked at narrow viewport widths) —
+**[variant A: card-bottom]** (`id: 'c4a'`, unchanged from the converged dialogue
+position, `StageCapture()`) and **[variant B: the Now band]** (`id: 'c4b'`, new,
+`StageNowBandCapture()`). Cotton labels sit above each column so Hallie's hand can
+compare in one glance; both are explicitly muslin-only, not ruled.
+
+Variant B renders the composer **as the `.now-line` band's own living content** —
+register chips, name field, and submit sit inline inside the NOW band itself (`.now-line
+now-compose`), with a directional hint riding the band (`↑ mints into Future, above` /
+`↓ sinks into Past, below`) that flips live with the active register chip — the
+geometry teaching itself before any pulse fires. First typing unfolds a content
+textarea in place below the band (same ~150ms family, real interaction / fake write).
+Submit fires the same landing-highlight pulse as variant A, but now the direction
+itself is the point: TODO pulses the **interior-future row above** the band; LOGGED
+pulses the **interior-past row below** it.
+
+**Verified in Chrome at `localhost:8015`:**
+- Variant A: unchanged behavior, register chips + card-bottom composer render and
+  submit correctly (retested, no regression from the split).
+- Variant B: typed into the name field with `todo` active — unfold fired in place,
+  hint read "↑ mints into Future, above"; submit cleared the fields, receipt toast
+  read `[does nothing yet] would capture "test todo capture" as TODO → interior-future`,
+  and the **interior-future row above the band pulsed amber** — correct direction.
+- Toggled to `logged / done`, hint live-updated to "↓ sinks into Past, below"; typed
+  and submitted again — receipt read `... as LOGGED/DONE → interior-past`, and the
+  **interior-past row below the band pulsed amber** — correct direction, confirmed
+  opposite of the TODO case.
+- No console errors either pass.
+
+**Contested / open, unchanged status:** neither variant is ruled. Light 1's private
+holdout (card-bottom is not-yet-wrong, not proven right) now has a concrete rival
+staged next to it rather than sitting as an abstract reservation — Hallie's hand
+decides between [variant A] and [variant B], or something else the pair suggests.
