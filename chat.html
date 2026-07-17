@@ -1,0 +1,402 @@
+<!-- MUSLIN — NOT REAL. Built 2026-07-17 to ask ONE question: can the penelope graph
+     read as a CHAT — and what do tense/doneness/frames become in conversation form?
+     See docs/muslins/chat-style-muslin/NOTES.md for the full writeup + forks.
+     Cheap cotton: hardcoded fake data, [does nothing yet] stubs, seams left showing
+     on purpose. Idiom borrowed from api/static/muslins/pull-tab-anatomy-muslin.html
+     (banner / fake data / one named question per zone) but this is a FRESH muslin,
+     not a revision of that one — different question, different anatomy.
+
+     House laws this muslin is built to obey, not invent:
+     - shared substance, projection-only difference (the A/B toggle law) — this is
+       ANOTHER PROJECTION of the same graph, not a new data model. Nothing here
+       invents an event shape; it re-renders the same {name, laid_by, tense,
+       doneness, charge-edges} events pull-tab-anatomy-muslin.html already renders
+       as cards.
+     - Hallie's fresh ruling: "you compose at the Now, and each view's geometry
+       decides where the Now lives." In a chat, the Now IS the bottom — so
+       bottom-compose (append-to-thread) is legal HERE specifically because chat
+       geometry puts Now there, the same law that made card-bottom legal for cards.
+     - frames are sovereign — messages are events laid_by frames (human, AI,
+       automation), indistinguishable BY KIND per the agent-agnostic hope. No
+       "AI message" CSS class exists here on purpose — only laid_by differs.
+     - nothing-silent — refusals render as an honest chat reply FROM THE DOOR, never
+       a silent no-op. See the "[door refused: name too long]" bubble, card 3.
+-->
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>[MUSLIN] chat-style projection</title>
+<style>
+  body { font-family: 'Hanken Grotesk', Arial, sans-serif; background:#faf8f3; color:#23291f; margin:0; padding:1.6rem; }
+  h1 { font-family: Georgia, 'Source Serif 4', serif; font-size:1.5rem; margin:0 0 .3rem; }
+  .mono { font-family: ui-monospace, Menlo, monospace; }
+  .fake { color:#aaa; font-size:.7em; font-family: ui-monospace, monospace; }
+  .banner { background: repeating-linear-gradient(45deg,#ffe08a,#ffe08a 12px,#fff3c4 12px,#fff3c4 24px);
+    border: 2px dashed #b08900; padding: .6rem 1rem; margin-bottom: 1.2rem; font-weight: bold; font-size:.85rem; }
+  .controls { display:flex; gap:1.2rem; flex-wrap:wrap; align-items:center; margin-bottom:1.4rem;
+    padding:.7rem 1rem; background:#fff; border:1.5px dashed #999; font-size:.78rem; }
+  .controls label { display:flex; align-items:center; gap:.35rem; cursor:pointer; }
+  .fork-note { font-size:.7rem; color:#8a6d12; }
+
+  .app { max-width:760px; margin:0 auto; }
+
+  /* ===== ZONE 1: channel header — pinned thread header as story/sublime =====
+     NAMED QUESTION: is a thread a DAY, a STORY, or a CONE? This header wears
+     whichever the toggle picks; nothing else in the chat changes shape. */
+  .channel-header { background:#fff; border:2px solid #23291f; border-bottom:none;
+    border-radius:10px 10px 0 0; padding:.7rem 1rem; position:relative; }
+  .channel-title { font-family:Georgia,serif; font-size:1.05rem; font-weight:700; display:flex; align-items:center; gap:.5rem; }
+  .channel-sub { font-size:.72rem; color:#6b6f66; margin-top:.15rem; }
+  .channel-charge { font-size:.65rem; font-family:ui-monospace,monospace; color:#8a6508;
+    background:#fbf3df; border:1px dashed #c2723a; border-radius:4px; padding:.15rem .5rem; margin-top:.4rem; display:inline-block; }
+  .zone-q { position:absolute; top:.4rem; right:.6rem; font-size:.55rem; font-family:ui-monospace,monospace;
+    color:#c0392b; background:#fff; padding:.1rem .35rem; border:1px dashed #c0392b; border-radius:3px; opacity:.85; }
+
+  /* ===== ZONE 2: the thread — a day's events AS messages ===== */
+  .thread { background:#fdfcf8; border:2px solid #23291f; border-top:none; border-bottom:none;
+    padding:1rem 1rem .5rem; display:flex; flex-direction:column; gap:.55rem; position:relative; min-height:200px; }
+
+  .msg-row { display:flex; gap:.6rem; align-items:flex-start; }
+  .avatar { width:30px; height:30px; border-radius:50%; border:2px solid #23291f; flex:0 0 auto;
+    display:flex; align-items:center; justify-content:center; font-size:.85rem; font-weight:700; background:#f1efe8; }
+  .avatar.frame-hallie { background:#dce8f7; border-color:#2c5da0; }
+  .avatar.frame-claude { background:#e9dcf5; border-color:#7c4dbb; }
+  .avatar.frame-automation { background:#e4e4e4; border-color:#6b6f66; }
+
+  .bubble-col { flex:1; min-width:0; }
+  .bubble-meta { font-size:.66rem; font-family:ui-monospace,monospace; color:#6b6f66; margin-bottom:.15rem;
+    display:flex; align-items:center; gap:.4rem; }
+  .bubble-meta .laid-by { font-weight:700; color:#23291f; }
+  .bubble { background:#fff; border:1.5px solid #23291f; border-radius:10px; padding:.5rem .7rem; font-size:.88rem;
+    position:relative; display:inline-block; max-width:100%; }
+  .bubble.struck { text-decoration:line-through; color:#8a9080; background:#f4f2ec; }
+  .bubble.mint-todo { border-color:#4a7ec2; box-shadow:0 0 0 2px #4a7ec222; }
+  .bubble.mint-done { border-color:#c2723a; box-shadow:0 0 0 2px #c2723a22; }
+  .bubble.ruling { border-width:2.5px; border-color:#8a1c1c; background:#fff7f5; }
+  .bubble .tense-chip { font-size:.58rem; font-family:ui-monospace,monospace; text-transform:uppercase;
+    letter-spacing:.04em; border:1px dashed #999; border-radius:3px; padding:0 .35em; margin-left:.5em; color:#6b6f66; vertical-align:middle; }
+  .bubble .tense-chip.future { color:#2c5da0; border-color:#4a7ec2; }
+  .bubble .tense-chip.past { color:#8a6508; border-color:#c2723a; }
+  .bubble .strike-note { display:block; font-size:.6rem; font-style:italic; color:#8a6d12; margin-top:.25rem; }
+  .bubble .gather-btn { font-size:.6rem; font-family:ui-monospace,monospace; border:1px dashed #888; background:#eee;
+    padding:.05rem .4rem; border-radius:3px; cursor:pointer; margin-left:.5em; }
+  .bubble .gather-btn:hover { background:#ffe08a; }
+  .charge-note { font-size:.62rem; color:#8a6508; font-family:ui-monospace,monospace; margin-top:.2rem; }
+
+  /* the killer case: a ruling exchange gets its own visual weight — thicker
+     border, small "RULING" flag — but it is STILL a message, same DOM shape,
+     laid_by a frame like any other. No special message type, just a quality. */
+  .ruling-flag { font-size:.6rem; font-family:ui-monospace,monospace; font-weight:700; color:#8a1c1c;
+    background:#fde; border:1px dashed #8a1c1c; border-radius:3px; padding:0 .4em; margin-left:.5em; }
+
+  /* refusal bubble — nothing-silent: the door speaks, in its own voice */
+  .bubble.door-refusal { border-style:dashed; border-color:#c0392b; background:#fff0ee; color:#8a1c1c; font-family:ui-monospace,monospace; font-size:.78rem; }
+
+  .day-divider { text-align:center; font-size:.65rem; font-family:ui-monospace,monospace; color:#8a9080;
+    margin:.3rem 0; position:relative; }
+  .day-divider::before, .day-divider::after { content:''; display:inline-block; width:30%; height:1px;
+    background:#ddd6c5; vertical-align:middle; margin:0 .5em; }
+
+  /* ===== ZONE 3: reply-thread stub (drawers-in-chat-form fork) ===== */
+  .reply-stub { margin-left:2.4rem; margin-top:.2rem; }
+  .reply-toggle { font-size:.65rem; font-family:ui-monospace,monospace; color:#4a7ec2; cursor:pointer;
+    border:1px dashed #4a7ec2; border-radius:4px; padding:.1rem .5rem; background:#f0f5fb; display:inline-block; }
+  .reply-toggle:hover { background:#dce8f7; }
+  .reply-pane { max-height:0; overflow:hidden; transition:max-height .16s ease-out; margin-top:.3rem;
+    border-left:3px dashed #4a7ec2; padding-left:.6rem; display:flex; flex-direction:column; gap:.4rem; }
+  .reply-pane.open { max-height:400px; }
+  .reply-pane .msg-row .bubble { font-size:.8rem; }
+
+  /* ===== ZONE 4: composer — the Now IS the bottom, so bottom-compose is legal here ===== */
+  .composer-zone { background:#fff; border:2px solid #23291f; border-top:3px solid #23291f;
+    border-radius:0 0 10px 10px; padding:.7rem 1rem 1rem; position:relative; }
+  .now-here { font-size:.6rem; font-family:ui-monospace,monospace; color:#6b6f66; text-align:center; margin-bottom:.5rem;
+    letter-spacing:.08em; text-transform:uppercase; }
+  .register-chips { display:flex; gap:.4rem; margin-bottom:.45rem; }
+  .register-chip { font-size:.68rem; font-family:ui-monospace,monospace; border:1px solid #999;
+    background:#eee; padding:.2rem .55rem; border-radius:12px; cursor:pointer; }
+  .register-chip.active.todo { background:#dce8f7; border-color:#4a7ec2; color:#2c5da0; font-weight:700; }
+  .register-chip.active.done { background:#f7ecd0; border-color:#c2723a; color:#8a6508; font-weight:700; }
+  .register-note { font-size:.6rem; color:#8a6d12; font-style:italic; margin-left:.3rem; }
+  .composer-row { display:flex; gap:.5rem; }
+  .composer-name { flex:1; font-size:.9rem; padding:.45rem .6rem; border:1.5px solid #23291f; border-radius:8px; }
+  .composer-send { font-size:.85rem; padding:.45rem .9rem; border:1.5px solid #23291f; border-radius:8px;
+    background:#f1efe8; cursor:pointer; font-weight:600; }
+  .composer-send:hover { background:#ffe08a; }
+  .composer-frame-picker { font-size:.68rem; font-family:ui-monospace,monospace; margin-top:.4rem; color:#6b6f66; }
+  .composer-frame-picker select { font-family:ui-monospace,monospace; font-size:.68rem; }
+
+  .stage-label { font-size:.6rem; font-family:ui-monospace,monospace; text-transform:uppercase; letter-spacing:.05em;
+    color:#8a6d12; margin:1.6rem 0 .4rem; }
+  .fork-block { background:#fff; border:1.5px dashed #999; padding:.7rem 1rem; margin-bottom:.8rem; font-size:.82rem; }
+  .fork-block b { color:#8a6d12; }
+
+  footer.notes { max-width:760px; margin:2rem auto; font-size:.78rem; opacity:.75; line-height:1.5; }
+  code { background:#eee; padding:0 .25em; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<div class="banner mono">⚠ MUSLIN / NOT REAL — chat-style projection. THE QUESTION: can the penelope
+  graph read as a CHAT, and what do tense/doneness/frames become in conversation form? Same
+  shared substance as every other projection (pull-tab cards, dayview) — this toggles the
+  PROJECTION only, per the A/B toggle law, never the event shape. Try to break the metaphor.
+  See docs/muslins/chat-style-muslin/NOTES.md.</div>
+
+<h1>Chat-style projection <span class="fake">[fake data below, no backend]</span></h1>
+
+<div class="controls">
+  <label><input type="checkbox" id="headerMode"> channel header wears STORY name instead of DAY <span class="fork-note">(fork: is a thread a day, a story, or a cone?)</span></label>
+  <label><input type="checkbox" id="showChips" checked> show tense/register chips on bubbles</label>
+</div>
+
+<div class="app" id="app"></div>
+
+<footer class="notes mono">
+  seams left showing on purpose: send appends a fake message client-side only, no
+  persistence, no server round-trip. Reply-threads are a stub (<code>[does nothing yet]</code>
+  beyond opening the pane). The ruling exchange (card near the bottom of the thread) is
+  scripted fake dialogue, not a live bujo API call — but its SHAPE (a frame asks, Hallie's
+  reply IS the ruling event) mirrors <code>user-story-claude-can-ask-hallie-for-rulings-via-
+  the-bujo-interface-directly</code>, which is LIVE in canon today. Name-too-long refusal is
+  a real client-side check, fake door.
+</footer>
+
+<script>
+/* ============================== FAKE DATA ============================== */
+/* Same event shape pull-tab-anatomy-muslin.html uses (name/laid_by/tense/doneness/
+   charge), just projected as messages instead of card rows. Projection-only
+   difference — the A/B toggle law. */
+const FRAMES = {
+  'frame-hallie':      { short: 'H', full: 'Hallie' },
+  'frame-claude-clerk':{ short: 'C', full: 'frame-claude-clerk' },
+  'frame-review-surface': { short: 'R', full: 'frame-review-surface' },
+  'frame-wake-tick':   { short: '⚙', full: 'frame-wake-tick (automation)' },
+};
+
+const STORY = { name: 'render-redesign: repaint model not templates', charge: 'steers toward: T1 defineComponent decision' };
+
+const THREAD = [
+  { id:'m1', laid_by:'frame-hallie', tense:'past', doneness:'done', text:'ok the drawer perf spike — is it the index or the render model?', reply:null },
+  { id:'m2', laid_by:'frame-claude-clerk', tense:'past', doneness:'done', text:'traced it: intervalOf prepasses = 16.6ms of ~30ms repaint. index already exists, I overstated canon size earlier — correcting the record.', reply:['self-correction, not a new claim — see 131404f'] },
+  { id:'m3', laid_by:'frame-claude-clerk', tense:'future', doneness:'todo', text:'stand up a render-redesign committee to look at repaint vs template-wipe', reply:null, mint:'todo' },
+  { id:'m4', laid_by:'frame-hallie', tense:'past', doneness:'done', text:'legibility of process is first-class. components need to be authorable/auditable in a single context.', reply:null, ruling:true },
+  { id:'m5', laid_by:'frame-claude-clerk', tense:'past', doneness:'done', text:'landed: three-layer cut, scher / scher-reads / penelope. brief written.', reply:['docs/committees/BRIEF-scher-visual-rendering.md'], bornFuture:true },
+];
+
+/* THE KILLER CASE — user-story-claude-can-ask-hallie-for-rulings-via-the-bujo-
+   interface-directly, LIVE in canon. An agent frame asks a ruling; Hallie's
+   reply from the SAME chat IS the ruling event — not a comment about a
+   ruling, not a summary of one. Staged here as the second half of the thread. */
+const COORDINATION = [
+  { id:'k1', laid_by:'frame-review-surface', tense:'present', doneness:'todo', text:'@frame-hallie — REVIEW-SURFACE.md still predates the successor files it describes. Fold it into the newer docs, or keep it as a pointer and retire the body?', reply:null, asksRuling:true },
+  { id:'k2', laid_by:'frame-hallie', tense:'past', doneness:'done', text:'keep it as a pointer. the sprint-retro grammar folded into penelope-planning already — this slug stays as a pointer, use those skills instead.', reply:null, ruling:true },
+  { id:'k3', laid_by:'frame-review-surface', tense:'past', doneness:'done', text:'done — REVIEW-SURFACE.md is now a one-paragraph pointer, receipt in comment-19311.', reply:['this reply IS the closed loop — no chat relay, no human copy-paste'] },
+];
+
+/* ============================== STATE ============================== */
+const S = {
+  headerMode: false,   // false = DAY header, true = STORY header (fork 1)
+  showChips: true,
+  replyOpen: {},        // msgId -> bool
+  messages: THREAD.concat(COORDINATION),
+  composerName: '',
+  composerFrame: 'frame-claude-clerk',
+  register: 'todo',
+};
+
+/* ============================ COMPONENTS ============================ */
+function ChannelHeader() {
+  const dayMode = !S.headerMode;
+  return `<div class="channel-header">
+    <span class="zone-q">[zone 1: thread header]</span>
+    <div class="channel-title">${dayMode ? '📅 2026-07-16' : '💬 ' + STORY.name}</div>
+    <div class="channel-sub">${dayMode
+      ? 'a day, read as a channel — every event laid on this day appears below, in order'
+      : 'a story, read as a channel — only events charged toward this sublime appear below'}</div>
+    <div class="channel-charge">${STORY.charge} <span class="fake">[charge edge — fake]</span></div>
+  </div>`;
+}
+
+function avatarFor(laidBy) {
+  const f = FRAMES[laidBy] || { short:'?', full:laidBy };
+  const cls = laidBy.includes('hallie') ? 'frame-hallie' : laidBy.includes('automation') || laidBy.includes('wake') ? 'frame-automation' : 'frame-claude';
+  return `<div class="avatar ${cls}" title="${f.full} — laid_by, not a message 'kind'">${f.short}</div>`;
+}
+
+function MessageRow(m) {
+  const f = FRAMES[m.laid_by] || { full: m.laid_by };
+  const bubbleClasses = ['bubble'];
+  if (m.doneness === 'done' && m.bornFuture) bubbleClasses.push('struck');
+  if (m.mint === 'todo') bubbleClasses.push('mint-todo');
+  if (m.ruling) bubbleClasses.push('ruling');
+  const chips = S.showChips ? `
+    <span class="tense-chip ${m.tense}">${m.tense}</span>
+    ${m.doneness === 'todo' ? '<span class="tense-chip future">todo — mints a card</span>' : ''}
+  ` : '';
+  const ruleFlag = m.ruling ? `<span class="ruling-flag">RULING EVENT</span>` : '';
+  const askFlag = m.asksRuling ? `<span class="ruling-flag" style="color:#2c5da0;border-color:#4a7ec2;background:#eef4fc">ASKS RULING</span>` : '';
+  const gather = (m.doneness === 'todo')
+    ? `<button class="gather-btn" data-gather="${m.id}" title="[does nothing yet] gather into done — struck in place">gather</button>`
+    : '';
+  const strike = m.bornFuture ? `<span class="strike-note">[born future, now past — struck in place, same law as the card muslin]</span>` : '';
+  const replyStub = m.reply ? `
+    <div class="reply-stub">
+      <span class="reply-toggle" data-reply-toggle="${m.id}">${S.replyOpen[m.id] ? '▾' : '▸'} ${m.reply.length} repl${m.reply.length===1?'y':'ies'} <span class="fake">[fork: is this a drawer?]</span></span>
+      <div class="reply-pane ${S.replyOpen[m.id] ? 'open' : ''}">
+        ${m.reply.map(r => `<div class="msg-row"><div class="avatar" style="width:22px;height:22px;font-size:.65rem">·</div><div class="bubble-col"><div class="bubble">${r}</div></div></div>`).join('')}
+      </div>
+    </div>` : '';
+  return `<div class="msg-row" data-msg="${m.id}">
+    ${avatarFor(m.laid_by)}
+    <div class="bubble-col">
+      <div class="bubble-meta"><span class="laid-by">${f.full}</span> <span class="fake">laid_by</span> ${ruleFlag}${askFlag}</div>
+      <div class="${bubbleClasses.join(' ')}">${m.text}${chips}${gather}${strike}</div>
+      ${replyStub}
+    </div>
+  </div>`;
+}
+
+function Composer() {
+  const mode = S.register;
+  return `<div class="composer-zone">
+    <span class="zone-q" style="top:.5rem">[zone 4: composer — bottom-compose, legal because chat's Now IS the bottom]</span>
+    <div class="now-here">— NOW —</div>
+    <div class="register-chips">
+      <button type="button" class="register-chip todo ${mode==='todo'?'active':''}" data-register="todo">• todo — mints a card</button>
+      <button type="button" class="register-chip done ${mode==='done'?'active':''}" data-register="done">✕ logged / done</button>
+      <span class="register-note">a chat message that MINTS a todo</span>
+    </div>
+    <div class="composer-row">
+      <input type="text" class="composer-name" id="composerName" placeholder="say something…" maxlength="500">
+      <button type="button" class="composer-send" id="composerSend">send</button>
+    </div>
+    <div class="composer-frame-picker">laid_by:
+      <select id="composerFrame">
+        ${Object.keys(FRAMES).map(k => `<option value="${k}" ${k===S.composerFrame?'selected':''}>${k}</option>`).join('')}
+      </select>
+      <span class="fake">[muslin lets you pick any frame — real door would gate this by auth]</span>
+    </div>
+    <div id="refusalSlot"></div>
+  </div>`;
+}
+
+function Forks() {
+  return `
+  <div class="stage-label">forks this muslin surfaces, not resolved here — that's the point</div>
+  <div class="fork-block"><b>Fork A — is a thread a DAY, a STORY, or a CONE?</b> Toggle "channel header"
+    above: DAY mode shows every event laid that day in order (like the dayview muslin);
+    STORY mode filters to only events charged toward one sublime (like a Slack channel per
+    project). A CONE reading (show me everything this event prehends, recursively) isn't
+    modeled at all here — would a cone even render linearly as a thread, or does it need
+    branching UI the chat metaphor can't hold? Unresolved.</div>
+  <div class="fork-block"><b>Fork B — where do drawers go in chat form?</b> The pull-tab
+    muslin's future/past drawers became "N replies" stubs here (see the reply-toggle under
+    m2 and k3) — but is a reply-thread the same THING as a drawer (outside-this-event
+    prehension), or is it a different relationship wearing similar clothes (a reply
+    prehends the MESSAGE, a drawer item prehends the CARD)? Untested: nesting — does a
+    reply itself get its own reply-drawer, infinitely, the way cards can nest drawers?</div>
+  <div class="fork-block"><b>Fork C — does doneness-as-strikethrough survive the chat
+    metaphor?</b> m3/k1 render as "asks/mints a todo" chips; gathering one (try the
+    "gather" button on m3) strikes it in place rather than moving it anywhere — is a
+    struck chat message legible as "done," or does strikethrough in a chat read as
+    "retracted" / "this didn't happen," the opposite of what the card muslin means by it?</div>
+  <div class="fork-block"><b>Fork D — is the ruling exchange a message pair, or a
+    different kind of event entirely?</b> k1/k2 render with identical DOM to every other
+    bubble, just carrying a ".ruling" quality — per "qualities determine rendering detail,
+    never content/membership" (2026-07-16 committee ruling). Does that quality-only
+    treatment hold up once a ruling needs to be FOUND LATER (searched, cited, diffed
+    against a prior ruling), or does "ruling" need to be a first-class laid relationship,
+    not just a paint difference on a chat bubble?</div>
+  `;
+}
+
+/* ============================== RENDER ============================== */
+const app = document.getElementById('app');
+function render() {
+  const visible = S.headerMode
+    ? S.messages.filter(m => m.text.toLowerCase().includes('render') || m.text.toLowerCase().includes('drawer') || m.text.toLowerCase().includes('committee') || m.text.toLowerCase().includes('component'))
+    : S.messages;
+  app.innerHTML = `
+    ${ChannelHeader()}
+    <div class="thread">
+      <span class="zone-q">[zone 2: thread — a day's events, as messages]</span>
+      ${visible.map((m,i) => {
+        const prevAsk = i>0 && visible[i-1] && visible[i-1].asksRuling;
+        const divider = (m.id === 'k1') ? `<div class="day-divider">the coordination story — LIVE in canon (user-story-claude-can-ask-hallie-for-rulings-via-the-bujo-interface-directly)</div>` : '';
+        return divider + MessageRow(m);
+      }).join('')}
+    </div>
+    ${Composer()}
+    ${Forks()}
+  `;
+  document.getElementById('headerMode').checked = S.headerMode;
+  document.getElementById('showChips').checked = S.showChips;
+}
+
+/* ============================== EVENTS ============================== */
+document.getElementById('headerMode').addEventListener('change', e => { S.headerMode = e.target.checked; render(); });
+document.getElementById('showChips').addEventListener('change', e => { S.showChips = e.target.checked; render(); });
+
+app.addEventListener('click', e => {
+  const replyToggle = e.target.closest('[data-reply-toggle]');
+  const gather = e.target.closest('[data-gather]');
+  const registerBtn = e.target.closest('[data-register]');
+  const send = e.target.closest('#composerSend');
+
+  if (replyToggle) {
+    const id = replyToggle.dataset.replyToggle;
+    S.replyOpen[id] = !S.replyOpen[id];
+    render();
+    return;
+  }
+  if (gather) {
+    const id = gather.dataset.gather;
+    const msg = S.messages.find(m => m.id === id);
+    if (msg) { msg.doneness = 'done'; msg.bornFuture = true; msg.mint = null; }
+    render();
+    return;
+  }
+  if (registerBtn) {
+    S.register = registerBtn.dataset.register;
+    render();
+    return;
+  }
+  if (send) {
+    const nameEl = document.getElementById('composerName');
+    const frameEl = document.getElementById('composerFrame');
+    const refusalSlot = document.getElementById('refusalSlot');
+    const name = (nameEl.value || '').trim();
+    refusalSlot.innerHTML = '';
+    if (!name) return; // empty is an honest no-op, same law as capture-composer.ts
+    // NOTHING-SILENT: a refusal renders as an honest chat reply FROM THE DOOR,
+    // never a silent no-op. Real check (name-too-long), fake door voice.
+    if (name.length > 140) {
+      refusalSlot.innerHTML = `<div class="msg-row" style="margin-top:.5rem">
+        <div class="avatar" style="background:#fde;border-color:#c0392b">⌀</div>
+        <div class="bubble-col">
+          <div class="bubble-meta"><span class="laid-by">door</span></div>
+          <div class="bubble door-refusal">[door refused: name too long — 140 char cap, yours was ${name.length}. try again, shorter, or move the extra into content.]</div>
+        </div>
+      </div>`;
+      return;
+    }
+    S.messages.push({
+      id: 'sent-' + Date.now(),
+      laid_by: frameEl.value,
+      tense: S.register === 'todo' ? 'future' : 'past',
+      doneness: S.register,
+      mint: S.register === 'todo' ? 'todo' : null,
+      text: name,
+      reply: null,
+    });
+    nameEl.value = '';
+    render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
