@@ -380,6 +380,58 @@ not additional rulings — Hallie ruled on behavior/appearance, not on DOM shape
 
 ## Tear this apart.
 
+## Question 8 — capture-composer × muslin dialogue (2026-07-17, post-REVIVAL)
+
+With the muslin revived as standing design referee (FUNERAL.md's REVIVED section,
+12:13), Hallie asked for a dialogue between it and `capture-composer.ts` (the
+real, shipped name+content capture affordance, now carrying both register chips
+as of STAGE 3.5/eb94ec8) to settle where capture sits in the anatomy. Full
+exchange: `docs/committees/2026-07-17-capture-composer-muslin-dialogue.md`.
+
+**Converged:**
+- **Composer position: card-bottom / card-face, UNMOVED** from where
+  `buildCardCapture` already mounts it today. The strong candidate position —
+  docking the composer ON the Now line itself, "minting at the hinge" — was
+  ruled out by the muslin: the Now line is explicitly non-collapsible and not a
+  click target (ontology ruling, 10:08), and it only exists once the interior
+  is open, whereas the composer mounts unconditionally today. Moving it there
+  would be a reach regression, not a redesign.
+- **Register chip position: unchanged**, sits immediately above the composer,
+  exactly as `buildRegisterChips`/`buildCaptureComposer` already stack them.
+- **One instance per card (not day-level): already settled by existing code**,
+  not actually contested — `isDaySlug(slug)` branches inside one
+  `buildCardCapture` call, either way exactly one composer mounts.
+- **FEEL rulings (unfold timing, Enter-from-name, inline refusals in the
+  server's own words) reaffirmed untouched.**
+
+**New idea, staged but NOT yet ruled:** a landing-highlight — a brief pulse on
+whichever destination zone (interior-future for a TODO capture, interior-past
+for a LOGGED/DONE capture) receives a fresh capture, as the visual bridge
+between "minted at card-bottom" and "landed in the interior." Staged in the
+muslin (card 4) as a real, if fake, interaction: a timed CSS class, no real
+write underneath it.
+
+**Contested / open:**
+- **Capture-into-drawer: not modeled, not ruled.** If legal at all, it would be
+  via DROP only (the muslin's existing drop-opens-pinned mechanic), never a
+  second composer instance inside a drawer. Folded into existing fork #4
+  (drag-drop-onto-tab semantics undecided) rather than answered fresh here.
+- **Named holdout:** capture-composer's voice conceded the Now-line ontology
+  argument but registered that card-bottom is "not obviously right just
+  because it's not-yet-wrong" — a private reservation, not a re-opened
+  question. Hallie's hand rules if this needs revisiting.
+
+**Staged in the muslin:** card 4, `pull-tab-anatomy-muslin.html` — the
+composer rendered at the converged position with its interior defaulted open
+(staging convenience only) so the landing zones are visible. Muslin register:
+fake writes, `[does nothing yet]` receipt toast + console log, but a REAL
+unfold interaction (first typing unfolds the content editor, same ~150ms
+family as `capture-composer.ts`) and a real landing-highlight pulse. Verified
+in Chrome at `localhost:8015` — typed into the name field (unfold fired),
+toggled the LOGGED/DONE chip, submitted (fields cleared, receipt toast showed
+the correct destination text, interior-past row pulsed amber, no console
+errors).
+
 ## GOOD TO GO (Hallie, 2026-07-17 10:47) — the muslin has answered its questions
 
 "Muslin is Good to Go, we just need to make sure the explanatory text doesn't creep into

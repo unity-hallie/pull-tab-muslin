@@ -274,6 +274,40 @@
   .debug-toggle-row { display:flex; gap:1.2rem; }
   footer.notes { max-width:640px; margin:2rem auto; font-size:.78rem; opacity:.75; line-height:1.5; }
   code { background:#eee; padding:0 .25em; border-radius:3px; }
+
+  /* ===== STAGE: capture-composer × muslin dialogue (card 4) — converged position
+     is card-bottom / card-face, UNMOVED from where cards.ts's buildCardCapture
+     already mounts it today. Staged here fake: seams showing, [does nothing yet]
+     writes, real unfold interaction welcome. See docs/committees/
+     2026-07-17-capture-composer-muslin-dialogue.md for the full exchange. ===== */
+  .stage-capture { border-top:2px dashed #23291f; padding:.7rem .9rem .9rem; background:#fbfaf5; }
+  .stage-capture .stage-label { font-family:ui-monospace,monospace; font-size:.6rem; text-transform:uppercase;
+    letter-spacing:.05em; color:#8a6d12; margin-bottom:.4rem; }
+  .capture-register-chips { display:flex; gap:.4rem; margin-bottom:.4rem; }
+  .capture-register-chip { font-size:.68rem; font-family:ui-monospace,monospace; border:1px solid #999;
+    background:#eee; padding:.2rem .55rem; border-radius:12px; cursor:pointer; }
+  .capture-register-chip.active.capture-register-chip-todo { background:#dce8f7; border-color:#4a7ec2; color:#2c5da0; font-weight:700; }
+  .capture-register-chip.active.capture-register-chip-done { background:#f7ecd0; border-color:#c2723a; color:#8a6508; font-weight:700; }
+  .capture-composer-row { display:flex; gap:.4rem; }
+  .capture-name { flex:1; font-size:.85rem; padding:.35rem .5rem; border:1.5px solid #23291f; border-radius:4px; }
+  .capture-submit { font-size:.8rem; padding:.35rem .8rem; border:1.5px solid #23291f; border-radius:4px;
+    background:#f1efe8; cursor:pointer; font-weight:600; }
+  .capture-submit:hover { background:#ffe08a; }
+  .capture-content-fold { max-height:0; overflow:hidden; transition:max-height .15s ease-out; }
+  .capture-content-fold.unfolded { max-height:100px; margin-top:.4rem; }
+  .capture-content-fold.instant { transition:none; }
+  .capture-content { width:100%; box-sizing:border-box; font-size:.8rem; padding:.4rem .5rem;
+    border:1.5px solid #23291f; border-radius:4px; resize:none; }
+  .capture-composer-refusal { margin-top:.4rem; font-size:.72rem; background:#fde; border:1px dashed #c0392b;
+    color:#8a1c1c; padding:.3rem .5rem; border-radius:4px; }
+
+  /* landing-highlight — NEW, staged not yet ruled (Light 1's ask, Light 2's
+     concession): a brief pulse on whichever interior zone receives a fresh
+     capture, the visual bridge between "minted at card-bottom" and "landed
+     in interior-future/interior-past." Muslin-fake: a timed CSS class, no
+     real write underneath it. */
+  @keyframes landingPulse { 0% { box-shadow:0 0 0 0 #fff7a1cc; } 100% { box-shadow:0 0 0 8px #fff7a100; } }
+  .irow.landing-highlight { animation: landingPulse .9s ease-out 2; border-color:#b08900; }
 </style>
 </head>
 <body>
@@ -297,7 +331,18 @@
   dropped item with a "…more" stub for the rest.
   <br><b>2026-07-17 10:37–10:38 round (RULED):</b> close tab gets headroom clearance from
   drawer content and takes its own drawer's palette one shade darker. Tab width = 120px WINS —
-  the narrow/medium/wide comparison is retired, every card now wears the single 120px tab.</div>
+  the narrow/medium/wide comparison is retired, every card now wears the single 120px tab.
+  <br><b>2026-07-17 — capture-composer × muslin dialogue staged (card 4):</b> the two lights
+  (capture-composer.ts and this muslin) converged on card-bottom/card-face placement for the
+  capture composer — unmoved from where <code>buildCardCapture</code> already mounts it —
+  because docking it onto the Now line would violate the "not a bucket, not collapsible"
+  ruling, and the Now line only exists when the interior is open (the composer is not gated
+  today). New idea staged, NOT yet ruled: a landing-highlight pulse on whichever zone
+  (interior-future for TODO, interior-past for LOGGED/DONE) receives a fresh capture, as the
+  visual bridge between "minted here" and "landed there." See
+  docs/committees/2026-07-17-capture-composer-muslin-dialogue.md for the full exchange,
+  including a named holdout (capture-composer's private reservation that card-bottom is
+  merely not-yet-wrong, not proven right — Hallie's hand rules).</div>
 
 <h1>Pull-tab anatomy <span class="fake">[fake data below, no backend]</span></h1>
 
@@ -367,12 +412,30 @@ const CARDS = [
     filterable: false,
     draggable: true,
   },
+  {
+    // STAGE (dialogue 2026-07-17): capture-composer × muslin converged position —
+    // card-bottom / card-face, UNMOVED from cards.ts's buildCardCapture today.
+    // interiorOpen defaults true here so the destination zones (interior-future /
+    // interior-past) are visible without an extra click, for staging purposes only.
+    id: 'c4', mark: '•', label: 'STAGE: capture composer in the anatomy (card-bottom)', emoji: '', tabWidth: 'wide',
+    future: [], past: [],
+    interior: {
+      future: [ { text:'(a fresh TODO capture lands here)', straddler:false } ],
+      present: [],
+      past: [ { text:'(a fresh LOGGED/DONE capture lands here)', bornFuture:false } ],
+    },
+    filterable: false,
+    stageCapture: true,
+  },
 ];
 
 /* ============================== STATE ============================== */
 const S = {
   drawerOpen: {},      // "id:kind" -> bool, PULLING the EXTERIOR drawer (independent of interior)
-  interiorOpen: {},    // "id" -> bool, the middle EXPAND tab (interior as a whole)
+  // "id" -> bool, the middle EXPAND tab (interior as a whole). c4 (the STAGE
+  // card) defaults open so the capture composer's landing zones are visible
+  // without an extra click — staging-only default, not a behavior change.
+  interiorOpen: { c4: true },
   sectionCollapsed: {},// "id:future|past" -> bool, per-section collapse toggle INSIDE the interior
   dragOverTarget: null,
   filterOn: false,
@@ -385,6 +448,8 @@ const S = {
   // landed, not the whole list, until the user asks for more.
   pinned: {},          // "id:kind" -> {tag,text}
   pinnedExpanded: {},  // "id:kind" -> bool, has "...more" been clicked
+  captureRegister: {},  // "id" -> 'todo'|'done', mirrors cards.ts's per-mount register box
+  captureUnfolded: {},  // "id" -> bool, fake unfold state (real interaction, fake write)
 };
 
 /* ============================ COMPONENTS ============================ */
@@ -538,6 +603,32 @@ function InteriorBlock(card) {
   </div>`;
 }
 
+// STAGE: capture-composer × muslin dialogue (2026-07-17) — the composer rendered
+// AT the converged position (card-bottom / card-face), same DOM neighborhood as
+// cards.ts's buildCardCapture mounts it today: register chips, then the composer.
+// Muslin register: fake submit, [does nothing yet] persistence, but a REAL unfold
+// interaction (first typing unfolds, same ~150ms family as capture-composer.ts) and
+// a real (if staged) landing-highlight pulse on the destination zone, per the
+// dialogue's converged "visual bridge" idea (not yet ruled by Hallie).
+function StageCapture(card) {
+  const mode = S.captureRegister[card.id] || 'todo';
+  const unfolded = !!S.captureUnfolded[card.id];
+  return `<div class="stage-capture" data-stage-capture="${card.id}">
+    <div class="stage-label">STAGE — capture composer, card-bottom/card-face (converged position) <span class="bucket-label">[does nothing yet]</span></div>
+    <div class="capture-register-chips">
+      <button type="button" class="capture-register-chip capture-register-chip-todo ${mode === 'todo' ? 'active' : ''}" data-stage-register="${card.id}:todo">• todo</button>
+      <button type="button" class="capture-register-chip capture-register-chip-done ${mode === 'done' ? 'active' : ''}" data-stage-register="${card.id}:done">✕ logged / done</button>
+    </div>
+    <div class="capture-composer-row">
+      <input type="text" class="capture-name" placeholder="capture…" data-stage-name="${card.id}" aria-label="capture a new event">
+      <button type="button" class="capture-submit" data-stage-submit="${card.id}">capture</button>
+    </div>
+    <div class="capture-content-fold ${unfolded ? 'unfolded' : ''}">
+      <textarea class="capture-content" rows="2" placeholder="details… (optional)" data-stage-content="${card.id}"></textarea>
+    </div>
+  </div>`;
+}
+
 function CardEl(card) {
   const interiorOpen = !!S.interiorOpen[card.id];
   // WIDTH RULED (2026-07-17 10:38, 120px wins) — the per-card width-variant
@@ -563,6 +654,7 @@ function CardEl(card) {
       <div class="expand-hitzone ${S.debugHitzones ? 'debug-on' : ''}" data-expand="${card.id}"></div>
       <div class="expand-tab" data-expand-toggle="${card.id}" title="expand tab — opens interior, not the drawers">${interiorOpen ? '⌃ close' : '⌄ expand'}</div>
       ${InteriorBlock(card)}
+      ${card.stageCapture ? StageCapture(card) : ''}
     </div>
     ${DrawerBlock(card, 'past')}
   </div>`;
@@ -617,6 +709,56 @@ list.addEventListener('click', e => {
     render();
     return;
   }
+
+  // STAGE: capture-composer dialogue — register chip + fake submit handlers.
+  const stageRegister = e.target.closest('[data-stage-register]');
+  const stageSubmit = e.target.closest('[data-stage-submit]');
+  if (stageRegister) {
+    const [id, mode] = stageRegister.dataset.stageRegister.split(':');
+    S.captureRegister[id] = mode;
+    render();
+    return;
+  }
+  if (stageSubmit) {
+    const id = stageSubmit.dataset.stageSubmit;
+    const nameEl = list.querySelector(`[data-stage-name="${id}"]`);
+    const contentEl = list.querySelector(`[data-stage-content="${id}"]`);
+    const name = (nameEl && nameEl.value || '').trim();
+    if (!name) return; // empty name is an honest no-op, same law as capture-composer.ts
+    const mode = S.captureRegister[id] || 'todo';
+    console.log('[muslin] STAGE capture submit [does nothing yet]', { id, name, content: (contentEl && contentEl.value || '').trim(), mode });
+    showReceipt('[does nothing yet] would capture "' + name + '" as ' + (mode === 'done' ? 'LOGGED/DONE → interior-past' : 'TODO → interior-future'));
+    // landing-highlight — NEW, staged not yet ruled: pulse the destination zone
+    // (dialogue's "visual bridge" concession) rather than moving the composer.
+    S.captureUnfolded[id] = false;
+    if (nameEl) nameEl.value = '';
+    if (contentEl) contentEl.value = '';
+    render();
+    const destSel = mode === 'done' ? `[data-interior="${id}"] .past-section .irow` : `[data-interior="${id}"] .future-section .irow`;
+    const destRow = list.querySelector(destSel);
+    if (destRow) {
+      destRow.classList.add('landing-highlight');
+      setTimeout(() => destRow.classList.remove('landing-highlight'), 1900);
+    }
+    return;
+  }
+});
+
+// STAGE: fake unfold — first typing in the stage composer's name/content unfolds
+// its content editor, same family as capture-composer.ts's real onEdit (unfold on
+// first typing, fold back when both fields are emptied). Delegated on 'input' so
+// it survives render() re-mounts.
+list.addEventListener('input', e => {
+  const nameEl = e.target.closest('[data-stage-name]');
+  const contentEl = e.target.closest('[data-stage-content]');
+  if (!nameEl && !contentEl) return;
+  const id = (nameEl || contentEl).dataset.stageName || (nameEl || contentEl).dataset.stageContent;
+  const n = list.querySelector(`[data-stage-name="${id}"]`);
+  const c = list.querySelector(`[data-stage-content="${id}"]`);
+  const empty = !(n && n.value.trim()) && !(c && c.value.trim());
+  const fold = list.querySelector(`[data-stage-capture="${id}"] .capture-content-fold`);
+  if (fold) fold.classList.toggle('unfolded', !empty);
+  S.captureUnfolded[id] = !empty;
 });
 
 function toggleDrawer(key) {
